@@ -107,7 +107,7 @@ Route::group(['namespace' => 'Api'], function () {
 
 // Merchant ACP App Start
 // B2C
-
+//test commit
 Route::post("/mpesa/payment/request", [
     "as" => "mpesa.paymentRequest",
     "uses" => "\App\Http\Controllers\ACP\MPESA\MpesaController@paymentRequest"
