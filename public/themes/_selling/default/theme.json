@@ -1,0 +1,10 @@
+{
+    "slug": "default",
+    "name": "Inception Technolabs LLP",
+    "description": "This is good place to start with",
+    "author": "Parth Daraji",
+	"email": "info@inception-technolabs.com",
+	"uri": "https://www.inception-technolabs.com/",
+	"license": "Copyright reserved to the Author",
+    "version": "1.1.0"
+}

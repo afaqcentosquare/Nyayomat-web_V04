@@ -1,0 +1,55 @@
+.checkout .form-control{
+    padding-left: 15px !important;
+    border-radius: 18px !important;
+}
+
+.checkout .form-select {
+    border-radius: 18px;
+    padding-left: 12px !important;
+}
+
+.checkout-title {
+    border-radius: 18px;
+    background-color: #F3F4FA;
+    padding: 12px 17px;
+}
+
+.checkout-button .btn {
+    border-radius: 7px;
+}
+
+.btn-blue {
+    background-color: #0071BC;
+}
+
+.cart-card {
+    border-radius: 18px;
+}
+
+.table>:not(caption)>*>* {
+    border-bottom-width: 0px;
+}
+
+.breadcrumb li a {
+    text-decoration: none;
+    color: #7A7D93;
+}
+
+.breadcrumb-item .active {
+    color: #101854;
+}
+
+.search .input-group {
+    width: 70%;
+}
+
+.input-group-icon-right {
+    padding: 8px 12px;
+}
+
+.checkout .input-group {
+    margin-left: 0px !important;
+    border: 1px solid #ced4da;
+    border-radius: 1.25rem;
+}
+

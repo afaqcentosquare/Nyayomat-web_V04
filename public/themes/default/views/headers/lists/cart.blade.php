@@ -1,0 +1,1 @@
+<li><a href="{{ route('cart.index') }}">{{ trans('theme.Shopping_cart') }}</a></li>
