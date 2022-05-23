@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\ACP\MPESA;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssetProviderWithdrawal;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class MpesaController extends Controller
@@ -122,9 +124,16 @@ gYoPHrJ92ToadnFCCpOlLKWc0xVxANofy6fqreOVboPO0qTAYpoXakmgeRNLUiar
         $response = $this->submit_URL_request($url, $data, $acc_token);
         return $response;
     }
-    public function B2CResultResponse(Request $request){
-        \Log::info('B2C result response:::');
-        \Log::info($request->all());
+    public function B2CResultResponse(Request $request, $asset_provider_id){
+        Log::info('B2C result response:::');
+        Log::info($request->all());
+        if($request["Result"]["ResultCode"] == 0){
+            $withdraw_now = new AssetProviderWithdrawal();
+            $withdraw_now->asset_provider_id = $asset_provider_id;
+            $withdraw_now->amount_withdraw = $request["Result"]["ResultParameters"]["ResultParameter"][0]["Value"];
+            $withdraw_now->save();
+        }
+        
         // ResultCode =>0, is successful transaction
         // ResultCode' => 1, The balance is insufficient for the transaction
         // ResultCode' => 2, Declined due to limit rule: less than the minimum transaction amount.
@@ -132,8 +141,8 @@ gYoPHrJ92ToadnFCCpOlLKWc0xVxANofy6fqreOVboPO0qTAYpoXakmgeRNLUiar
     }
 
     public function B2CTimeoutResponse(Request $request){
-        \Log::info('B2C Timeout response:::');
-        \Log::info($request->all());
+        Log::info('B2C Timeout response:::');
+        Log::info($request->all());
       
     }
 

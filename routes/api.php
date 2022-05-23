@@ -113,7 +113,7 @@ Route::post("/mpesa/payment/request", [
     "uses" => "\App\Http\Controllers\ACP\MPESA\MpesaController@paymentRequest"
 ]);
 
-Route::post("/b2c/result", [
+Route::post("/b2c/result/{asset_provider_id}", [
     "as" => "b2c.result",
     "uses" => "\App\Http\Controllers\ACP\MPESA\MpesaController@B2CResultResponse"
 ]);

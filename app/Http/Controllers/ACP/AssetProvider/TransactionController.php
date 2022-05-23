@@ -8,6 +8,7 @@ use App\Models\AssetProvider;
 use App\Models\AssetProviderTransaction;
 use App\Models\AssetProviderWithdrawal;
 use App\Http\Controllers\ACP\MPESA\MpesaController;
+use Illuminate\Support\Facades\Log;
 use Exception;
 class TransactionController extends Controller
 {
@@ -117,21 +118,20 @@ class TransactionController extends Controller
                     'Remarks' => 'Paid to '.$asset_provider_detail->shop_name,
                     'Amount' => $request->amount_withdraw,
                     'QueueTimeOutURL' => url('api/b2c/timeout'),
-                    'ResultURL' => url('api/b2c/result'),
+                    'ResultURL' => url('api/b2c/result/'.session("asset_provider_id")),
                     
                 ]);
                 
                 $response = $mpesa->paymentRequest($request);
                 
                 $response = json_decode($response, true);
-               
                 if(isset($response["ResponseCode"])){
                     if($response["ResponseCode"] == "0"){
-                        $withdraw_now = new AssetProviderWithdrawal();
-                        $withdraw_now->asset_provider_id = session("asset_provider_id");
-                        $withdraw_now->amount_withdraw = $request->amount_withdraw;
-                        if($withdraw_now->save()){
-                             return back()->withSuccess("Successfully withdrawn :)");
+                        $total_paid_after_trans = AssetProviderTransaction::where("asset_provider_id", session("asset_provider_id"))->wherenotnull("paid_on")->sum("amount");
+                        $total_withdraw_after_trans = AssetProviderWithdrawal::where("asset_provider_id", session("asset_provider_id"))->sum("amount_withdraw");
+                        $balance_after_trans = ($total_paid_after_trans - $total_withdraw_after_trans);
+                        if($balance == $balance_after_trans){
+                             return back()->withSuccess("Successfully withdrawn :-), kindly refresh the page to see your new account balance.");
                         }else{
                             return back()->withError("Something went wrong");
                         }
