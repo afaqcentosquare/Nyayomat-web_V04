@@ -7,8 +7,11 @@ Nyayomat ACP (Nyayomat Boost) is built alongside the e-commerce platform whereby
 The ACP contains users, product catalog, transactions, invoices and payments. The file directory is as follows: 
 
 ├── Controllers
+
 ├── Middleware
+
 ├── resources
+
 ├── routes
 
 #### **Controllers**
