@@ -15,13 +15,21 @@ The ACP contains users, product catalog, transactions, invoices and payments. Th
 ├── routes
 
 #### **Controllers**
+
 Contains the ACP Merchant API, ACP Dashboard & Ecommerce related files.
+
 1.0	App
+
 1.0.1 Http
+
 1.0.1.1 Controllers
+
 •	ACP
+
 •	Admin
+
 •	Ecommerce Frontend
+
 •	Storefront
 
 #### **Middleware**
