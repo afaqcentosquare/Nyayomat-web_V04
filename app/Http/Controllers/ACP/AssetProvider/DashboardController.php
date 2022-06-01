@@ -55,21 +55,21 @@ class DashboardController extends Controller
 
         $approve_assets = Asset::where("asset_provider_id", session("asset_provider_id"))->where("status", "approved")
                         ->with(["orderAssets" => function ($query){
-                            $query->selectraw("asset_id, sum(units) as order_units")->groupBy("asset_id");
+                            $query->selectraw("asset_id, sum(units) as order_units")->where('tbl_acp_merchant_asset_order.status','delivered')->groupBy("asset_id");
                         }])
                         ->with(["transactions" => function($query){
-                            $query->wherenotnull("paid_on")->where("type", "!=", "deposit")->orderBy('paid_on', 'DESC');
+                            $query->wherenotnull("paid_on")->orderBy('paid_on', 'DESC');
                         }])
                         ->withcount(["transactions" => function($query){
-                            $query->wherenotnull("paid_on")->where("type", "!=", "deposit");
+                            $query->wherenotnull("paid_on");
                         }])
                         ->with(["nextReceipt" => function($query) use($today_date){
                             $query->wherenull("paid_on")->where("due_date", ">=", $today_date);
                         }])->get();
 
-      // return response()->json(count($products_engaged));
+
         $pending_assets = Asset::where("asset_provider_id", session("asset_provider_id"))->where("status", "pending")->get();
-        //return response()->json($approve_assets);
+        //return response()->json([$approve_assets]);
         return view('acp.assetprovider.dashboard.index')
                 ->with("asset_provider_detail", $asset_provider_detail)
                 ->with("total_assets_value", $total_assets_value)

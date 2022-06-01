@@ -56,7 +56,7 @@ class DepositController extends Controller
         $pass_key = '2a214d33c22817761164f6ba2a7c51cbbd9c0982915c34e1596fa09d7859ada4';
         $appKeySecret = $shortcode . $pass_key . $timestamp;
         $password = base64_encode($appKeySecret);
-        $CallBackURL= "http://nyayomat.com/api/mpesaipn/".$request->merchant_id;
+        $CallBackURL= "https://nyayomat.com/api/mpesaipn/".$request->merchant_id;
 
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);

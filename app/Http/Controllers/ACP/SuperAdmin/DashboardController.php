@@ -19,7 +19,7 @@ class DashboardController extends Controller
     {
         $total_merchants = User::where("role_id", 3)->count();
         $total_asset_provider = AssetProvider::where("status", "approved")->count();
-        $merchant_transaction = MerchantTransaction::wherenotnull("paid_on")->sum("amount");
+        $merchant_transaction = MerchantTransaction::sum("amount");
         return view('acp.superadmin.dashboard.index')
                     ->with("total_merchants", $total_merchants)
                     ->with("total_asset_provider", $total_asset_provider)

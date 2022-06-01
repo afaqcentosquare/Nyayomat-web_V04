@@ -86,16 +86,16 @@
                     $fullfilled_payment_per = 0;
                     $fullfilled_payment = 0;
                     if($total_covered != 0 && $total_covered != null && $provider_asset_value->total_assets_value != 0 && $provider_asset_value->total_assets_value != null){
-                        $covered_payment_per = ($total_covered/$provider_asset_value->total_assets_value)*100;
+                        $covered_payment_per = ($total_covered/($total_fullfilled + $total_covered))*100;
                     }
                     if($total_fullfilled != 0 && $total_fullfilled != null && $merchant_asset_value->total_assets_value != 0 && $merchant_asset_value->total_assets_value != null){
-                        $fullfilled_payment_per = ($total_fullfilled/$merchant_asset_value->total_assets_value)*100;
+                        $fullfilled_payment_per = ($total_fullfilled/($total_fullfilled + $total_covered))*100;
                     }
                     @endphp
-                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{$covered_payment_per}}%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{$covered_payment_per}}%" aria-valuenow="{{$covered_payment_per}}" aria-valuemin="0" aria-valuemax="100">
                         Covered Payments
                     </div>
-                    <div class="progress-bar bg-success" role="progressbar" style="width: {{$fullfilled_payment_per}}%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{$fullfilled_payment_per}}%" aria-valuenow="{{$fullfilled_payment_per}}" aria-valuemin="0" aria-valuemax="100">
                         Fulfilled Payments
                     </div>
                 </div>
@@ -349,9 +349,9 @@
             </div>
             <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                 <div class="row mt-4">
-                    <div class="col-6 nyayomat-blue">
+                    {{-- <div class="col-6 nyayomat-blue">
                         Due Today : <small class="ml-3">Ksh</small> <span class="h5">{{number_format($due_today,2)}}</span>
-                    </div>
+                    </div> --}}
                     {{-- <div class="col-6 mb-4 text-right">
                         <a href="" class="btn btn-sm shadow bg-nyayomat-blue text-white">
                             Make Payment

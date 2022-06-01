@@ -107,7 +107,7 @@ Route::group(['namespace' => 'Api'], function () {
 
 // Merchant ACP App Start
 // B2C
-//test commit
+
 Route::post("/mpesa/payment/request", [
     "as" => "mpesa.paymentRequest",
     "uses" => "\App\Http\Controllers\ACP\MPESA\MpesaController@paymentRequest"
@@ -142,9 +142,14 @@ Route::post("mpesaipn/{merchant_id}", [
 
 Route::prefix('merchant')->group(function () {
     Route::post('login', 'ACP\API\MerchantController@login');
-    Route::post('register/request', 'ACP\API\MerchantController@registerRequest');
+    Route::post('register/request', 'Api\MerchantController@merchantSignup');
+    Route::get('locationListing', 'Api\LocationController@locationListing');
+    Route::get('city', 'ACP\API\MerchantController@getCountries');
+    Route::get('region/{id}', 'ACP\API\MerchantController@getRegions');
+    Route::get('location/{id}', 'ACP\API\MerchantController@getLocations');
     Route::get('pay/all/{id}/{type}', 'ACP\API\MerchantController@payAll');
-Route::middleware('auth:api')->group( function () {
+
+    //auth routes
     Route::get('accountbalance/{id}', 'ACP\API\MerchantController@accountBalance');
     Route::get('catalog/{id}', 'ACP\API\MerchantController@catalog');
     Route::get('browse/{id}', 'ACP\API\MerchantController@browse');
@@ -162,6 +167,8 @@ Route::middleware('auth:api')->group( function () {
     Route::get('paymentstats/{id}', 'ACP\API\MerchantController@paymentStats');
     Route::get('paymentconfirmation/{id}/{type}', 'ACP\API\MerchantController@paymentConfirmation');
     Route::get('pay/now/{invoice_id}/{merchant_id}', 'ACP\API\MerchantController@payNow');
+Route::middleware('auth:api')->group( function () {
+
     });
 });
 //Merchant ACP App End

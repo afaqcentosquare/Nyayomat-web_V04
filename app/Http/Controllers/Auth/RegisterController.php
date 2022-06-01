@@ -59,6 +59,7 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm($plan = null)
     {
+        
         //return view('auth.register', compact('plan'));
        return view('ecommerce_frontend.merchant.signup', compact('plan'));
     }
@@ -134,6 +135,7 @@ class RegisterController extends Controller
         $user = User::create([
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
+            'name' => $data['name'],
             'city' => $data['city'],
             'region' => $data['region'],
             // 'location' => implode(',', $data['location']),

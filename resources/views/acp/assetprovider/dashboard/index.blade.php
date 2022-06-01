@@ -326,6 +326,7 @@
                             if(isset($approve_asset->orderAssets[0]->order_units)){
                                 $order_units = $approve_asset->orderAssets[0]->order_units;
                             }
+                            $total_installment_count = App\Models\AssetProviderTransaction::where("asset_provider_id", $approve_asset->asset_provider_id)->where('asset_id',$approve_asset->id)->count();
                             @endphp
                                 <tr class="" style="">
                                     <td nowrap>
@@ -392,7 +393,7 @@
                                     </td>
                                     <td nowrap>
                                         {{$approve_asset->transactions_count}} /
-                                        {{$approve_asset->installment}}
+                                        {{$total_installment_count}}
                                     </td>
                                     <td nowrap>
                                         {{$approve_asset->total_out_standing_amount}}
@@ -465,11 +466,12 @@
                                                             Amount  <small>Ksh</small>
                                                         </th>
                                                         <th nowrap>
-                                                            Installment Number
+                                                            Installment
                                                         </th>
                                                        
                                                     </tr>
                                                 </thead>
+                                                {{-- {{dd($approve_asset->transactions)}} --}}
                                                 <tbody>
                                                     @foreach ($approve_asset->transactions as $key => $transaction)    
                                                     <tr>
@@ -483,7 +485,7 @@
                                                             {{number_format($transaction->amount,2)}}
                                                         </td>
                                                         <td nowrap>
-                                                            {{count($approve_asset->transactions) - $key}} / {{$approve_asset->installment}}
+                                                            {{$transaction->type}} ( {{count($approve_asset->transactions) - $key}} / {{$total_installment_count}} )
                                                         </td>
                                                     </tr>
                                                 @endforeach

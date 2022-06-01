@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class MerchantAssetOrder extends Model
 {
 
-     /**
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -35,4 +35,13 @@ class MerchantAssetOrder extends Model
     {
         return $this->hasMany(MerchantTransaction::class, 'asset_id', 'asset_id');
     }
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'order_units' => 'int'
+    ];
 }

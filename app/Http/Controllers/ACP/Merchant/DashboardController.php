@@ -54,10 +54,10 @@ class DashboardController extends Controller
                         ->where("tbl_acp_merchant_asset_order.merchant_id",session("merchant_id"))
                         ->where("tbl_acp_merchant_asset_order.status", "delivered")
                         ->with(["transactions" => function($query){
-                            $query->wherenotnull("paid_on")->where("type", "!=", "deposit")->orderBy('paid_on', 'DESC');
+                            $query->wherenotnull("paid_on")->orderBy('paid_on', 'DESC');
                         }])
                         ->withcount(["transactions" => function($query){
-                            $query->wherenotnull("paid_on")->where("type", "!=", "deposit");
+                            $query->wherenotnull("paid_on");
                         }])
                         ->with(["nextReceipt" => function($query) use($today_date){
                             $query->wherenull("paid_on")->where("due_date", ">=", $today_date);
@@ -153,6 +153,6 @@ class DashboardController extends Controller
     public function logout()
     {
         session()->flush();
-        return redirect()->route('login');
+        return redirect()->route('merchant.login');
     }
 }

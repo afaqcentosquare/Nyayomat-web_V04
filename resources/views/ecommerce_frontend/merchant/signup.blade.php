@@ -104,6 +104,17 @@
                         </div>
                     </div>
                     <div class="form-group row">
+                    <div class="col-lg-6 mb-4">
+                            <label>Applicant Name</label>
+                            <div class="input-group">
+                                <img src="{{ asset('acp/frontend/Images/icons/shop.png') }}" alt="">
+                                <input type="text" class="form-control" name="name" placeholder="Enter applicant name"
+                                    required>
+                            </div>
+                            @if ($errors->has('name'))
+                                <span class="text-danger">{{ $errors->first('name') }}</span>
+                            @endif
+                        </div>
                         <div class="col-lg-6 mb-4">
                             <label>Shop Name</label>
                             <div class="input-group">
@@ -115,6 +126,9 @@
                                 <span class="text-danger">{{ $errors->first('shop_name') }}</span>
                             @endif
                         </div>
+                        
+                    </div>
+                    <div class="form-group row">
                         <div class="col-lg-6  mb-4">
                             <label>City</label>
                             <div class="input-group">
@@ -136,8 +150,6 @@
                                 @endif
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group row">
                         <div class="col-lg-6 mb-4">
                             <label>Region</label>
                             <div class="input-group">
@@ -151,7 +163,9 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="col-lg-6  mb-4">
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-lg-12  mb-4">
                             <label>Location</label>
                             <div class="input-group">
                                 <img src="{{ asset('acp/frontend/Images/icons/location.png') }}" alt="">

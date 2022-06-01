@@ -8,7 +8,7 @@ use App\User;
 use App\Shop;
 use Illuminate\Support\Str;
 use App\Models\AssetProvider;
-
+use Illuminate\Support\Facades\Auth;
 class FrontendController extends Controller
 {
     //

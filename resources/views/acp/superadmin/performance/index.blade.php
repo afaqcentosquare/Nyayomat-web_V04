@@ -175,73 +175,30 @@
                             @foreach ($products_engaged as $products_engage)
                             @php
                                 $today_date = Carbon\Carbon::now("Africa/Nairobi")->toDateString();
-                               
-                                $transactions = App\Models\MerchantTransaction::where("merchant_id", $products_engage->merchant_id)
-                                ->wherenull("paid_on")
-                                ->groupBy("asset_id")
-                                ->selectRaw("asset_id, count(*) as total_due_count")
-                                ->where("due_date", "<=", $today_date)
-                                ->get();
-
-                                $total_due_id = array();
-                                foreach ($transactions as $transaction) {
-                                    if($transaction->total_due_count == 1){
-                                        $total_due_id[] = $transaction->asset_id;
-                                    }
-                                }            
+                                         
                                 $total_due_amount = App\Models\MerchantTransaction::where("merchant_id", $products_engage->merchant_id)
-                                                                        ->whereIn("asset_id", $total_due_id)
-                                                                        ->where("due_date", "<=", $today_date)
+                                                                        ->whereDate('due_date', $today_date)
                                                                         ->wherenull("paid_on")
                                                                         ->sum("amount");
 
-
-                                $total_pending_id = array();
-                                foreach ($transactions as $transaction) {
-                                    if($transaction->total_due_count >= 1){
-                                        $total_pending_id[] = $transaction->asset_id;
-                                    }
-                                }            
                                 $total_pending_amount = App\Models\MerchantTransaction::where("merchant_id", $products_engage->merchant_id)
-                                                                        ->whereIn("asset_id", $total_pending_id)
-                                                                        ->where("due_date", "<=", $today_date)
+                                                                        ->whereDate('due_date', now("Africa/Nairobi")->subDays(1))
                                                                         ->wherenull("paid_on")
                                                                         ->sum("amount");
-                                
-                                $total_over_due_id = array();
-                                foreach ($transactions as $transaction) {
-                                    if($transaction->total_due_count >= 2){
-                                        $total_over_due_id[] = $transaction->asset_id;
-                                    }
-                                }            
+       
                                 $total_over_due_amount = App\Models\MerchantTransaction::where("merchant_id", $products_engage->merchant_id)
-                                                                        ->whereIn("asset_id", $total_over_due_id)
-                                                                        ->where("due_date", "<=", $today_date)
+                                                                        ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
                                                                         ->wherenull("paid_on")
                                                                         ->sum("amount");
-
-                                $total_past_over_due_id = array();
-                                foreach ($transactions as $transaction) {
-                                    if($transaction->total_due_count >= 3){
-                                        $total_past_over_due_id[] = $transaction->asset_id;
-                                    }
-                                }            
+                   
                                 $total_past_over_due_amount = App\Models\MerchantTransaction::where("merchant_id", $products_engage->merchant_id)
-                                                                        ->whereIn("asset_id", $total_past_over_due_id)
-                                                                        ->where("due_date", "<=", $today_date)
+                                                                        ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
                                                                         ->wherenull("paid_on")
                                                                         ->sum("amount");
 
 
-                                $total_defaulted_id = array();
-                                foreach ($transactions as $transaction) {
-                                    if($transaction->total_due_count >= 4){
-                                        $total_defaulted_id[] = $transaction->asset_id;
-                                    }
-                                }            
                                 $total_defaulted_amount =  App\Models\MerchantTransaction::where("merchant_id", $products_engage->merchant_id)
-                                                                        ->whereIn("asset_id", $total_defaulted_id)
-                                                                        ->where("due_date", "<=", $today_date)
+                                                                        ->whereDate('due_date', '<=' , now("Africa/Nairobi")->subDays(4))
                                                                         ->wherenull("paid_on")
                                                                         ->sum("amount");
                                 $merchant_name = App\Shop::where("owner_id", $products_engage->merchant_id)->first();

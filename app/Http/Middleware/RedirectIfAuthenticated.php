@@ -29,7 +29,6 @@ class RedirectIfAuthenticated
                     }else{
                         return redirect()->to('ecommerce-dashboard');
                     }
-                    
                    // return redirect()->to('admin/dashboard');
                 }
                 break;

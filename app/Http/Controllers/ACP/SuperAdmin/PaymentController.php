@@ -42,7 +42,7 @@ class PaymentController extends Controller
 
         $year = Carbon::now()->format('Y');
 
-        $due_today = AssetProviderTransaction::where("due_date", "<" , $today_date)
+        $due_today = AssetProviderTransaction::where("due_date", "=" , $today_date)
                             ->wherenull("paid_on")
                             ->sum("amount");
 

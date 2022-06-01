@@ -380,7 +380,7 @@
                                     </td>
                                     <td nowrap>
                                         @if (isset($order->nextReceipt->due_date))
-                                        {{Carbon\Carbon::parse($order->nextReceipt->due_date)->addDays(1)->format('D , d - M - Y')}}  
+                                        {{Carbon\Carbon::parse($order->nextReceipt->due_date)->format('D , d - M - Y')}}  
                                         @else
                                         --
                                         @endif
@@ -443,7 +443,7 @@
                                                             Amount  <small>Ksh</small>
                                                         </th>
                                                         <th nowrap>
-                                                            Installment Number
+                                                            Payment Type
                                                         </th>
                                                        
                                                     </tr>
@@ -461,7 +461,7 @@
                                                                 {{number_format($transaction->amount,2)}}
                                                             </td>
                                                             <td nowrap>
-                                                                {{count($order->transactions) - $key}} / {{$order->installment}}
+                                                               {{ $transaction->type }} ( {{count($order->transactions) - $key}} / {{$order->installment}} )
                                                             </td>
                                                         </tr>
                                                     @endforeach

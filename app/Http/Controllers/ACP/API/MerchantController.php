@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\ACP\API;
 
+use App\Events\Shop\ShopCreated;
+use App\Events\User\UserCreated;
+use App\Helpers\Messaging;
 use App\Http\Controllers\Controller;
+use App\Jobs\CreateShopForMerchant;
 use App\Models\Asset;
 use App\Models\AssetProviderTransaction;
 use App\Models\MerchantAsset;
@@ -13,7 +17,13 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Merchant;
+use App\City;
+use App\Region;
+use App\Location;
 use App\Models\AssetProvider;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class MerchantController extends Controller
@@ -22,67 +32,41 @@ class MerchantController extends Controller
 
     public function registerRequest(Request $request)
     {
-        
-        $validator = Validator::make($request->all(), [
-            "applicant_name" => "required",
-            "shop_name" => "required",
-            "phone" => "required",
-            "email" => "required|email|unique:tbl_acp_asset_providers,email",
-            "county" => "required",
-            "sub_county" => "required",
-            "location" => "required"
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                "code" => 422,
-                "status" => false,
-                "message" => $validator->errors(),
-            ]);
+        // echo "<pre>"; print_r($request->all()); echo "</pre>"; exit();
+        // Start transaction!
+        DB::beginTransaction();
+
+        try {
+            $merchant = Merchant::store($request);
+            // Dispatching Shop create job
+            CreateShopForMerchant::dispatch($merchant, $request->all());
+        } catch (\Exception $e) {
+            // rollback the transaction and log the error
+            DB::rollback();
+            Log::error('Vendor Creation Failed: ' . $e->getMessage());
+
+            // add your error messages:
+            $error = new \Illuminate\Support\MessageBag();
+            $error->add('error', $e);
+
+            return response()->json(['status' => 'Error', 'msg' => 'Error while creating merchant', 'err' => 'Vendor Creation Failed: ' . $e->getMessage()], 404);
         }
 
-        try{
-            $operating_days = array();
-            $operating_days["monday"] = $request->monday;
-            $operating_days["tuesday"] = $request->tuesday;
-            $operating_days["wednesday"] = $request->wednesday;
-            $operating_days["thursday"] = $request->thursday;
-            $operating_days["friday"] = $request->friday;
-            $operating_days["saturday"] = $request->saturday;
-            $operating_days["sunday"] = $request->sunday;
-            
-            $asset_provider = new AssetProvider();
-            $asset_provider->applicant_name = $request->applicant_name;
-            $asset_provider->shop_name = $request->shop_name;
-            $asset_provider->phone = $request->phone;
-            $asset_provider->email = $request->email;
-            $asset_provider->county = $request->county;
-            $asset_provider->sub_county = $request->sub_county;
-            $asset_provider->operating_days = $operating_days;
-            $asset_provider->location = $request->location;
+        // Everything is fine. Now commit the transaction
+        DB::commit();
 
-            if($asset_provider->save()){
-                return response()->json([
-                    "code" => 200,
-                    "status" => true,
-                    "message" => "Your request Successfully Submitted. We will send you a confirmation email once your request has been approved",
-                ], 200);
-            }else{
-                return response()->json([
-                    "code" => 204,
-                    "status" => false,
-                    "message" => "something went wrong",
-                ], 204);
-            }
+        // Trigger user created event
+        event(new UserCreated($merchant, $request->get('name'), $request->get('password')));
 
-        }catch(Exception $ex){
-            return response()->json([
-                "code" => 204,
-                "status" => false,
-                "message" => "something went wrong",
-            ], 204);
-        }
-        
+        // Trigger shop created event
+        event(new ShopCreated($merchant->owns));
+
+        // send message to Nyayomat
+        $message = "A new merchant [$request->name] has signed up. Reach out to him via $request->mobile";
+        Messaging::sendMessage(env('BUSINESS_NUMBER'), $message);
+
+        return response()->json(['status' => 'success', 'msg' => trans('messages.created', ['model' => $this->model_name])], 200);
     }
 
     public function login(Request $request)
@@ -134,7 +118,6 @@ class MerchantController extends Controller
                 "message" => "Something went wrong",
             ], 204);
         }
-
     }
 
     public function catalog($id)
@@ -172,7 +155,6 @@ class MerchantController extends Controller
                 "message" => "Something went wrong",
             ], 204);
         }
-
     }
 
     public function browse($id)
@@ -181,25 +163,23 @@ class MerchantController extends Controller
             $browse = MerchantAsset::select("tbl_acp_merchant_assets.*", "tbl_acp_assets.image")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_assets.id")
                 ->get();
-            if(count($browse) > 0){
+            if (count($browse) > 0) {
                 return response()->json([
                     "status" => true,
                     "browse" => $browse
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "browse" => $browse
                 ], 204);
             }
-            
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
                 "message" => "Something went wrong",
             ], 204);
         }
-
     }
 
 
@@ -213,25 +193,23 @@ class MerchantController extends Controller
                 ->join("tbl_acp_asset_providers", "tbl_acp_asset_providers.id", "tbl_acp_merchant_asset_order.asset_provider_id")
                 ->get();
 
-            if(count($requested) > 0){
+            if (count($requested) > 0) {
                 return response()->json([
                     "status" => true,
                     "requested" => $requested
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "requested" => $requested
                 ], 204);
             }
-            
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
                 "message" => "Something went wrong",
             ], 204);
         }
-
     }
 
 
@@ -244,25 +222,23 @@ class MerchantController extends Controller
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_asset_order.asset_id")
                 ->join("tbl_acp_asset_providers", "tbl_acp_asset_providers.id", "tbl_acp_merchant_asset_order.asset_provider_id")
                 ->get();
-            if(count($received) > 0){
+            if (count($received) > 0) {
                 return response()->json([
                     "status" => true,
                     "received" => $received
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "received" => $received
                 ], 204);
             }
-            
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
                 "message" => "Something went wrong",
             ], 204);
         }
-
     }
 
     public function assetRequest(Request $request)
@@ -282,7 +258,7 @@ class MerchantController extends Controller
             $asset = MerchantAsset::where("id", $request->asset_id)->first();
             $merchant = User::where("id", $request->user_id)->first();
             if ($asset) {
-                if($asset->units >= $request->units) {
+                if ($asset->units >= $request->units) {
                     if ($merchant) {
                         if ($merchant->account_balance >= ($request->units * $asset->deposit_amount)) {
                             $order_request = new MerchantAssetOrder();
@@ -310,7 +286,6 @@ class MerchantController extends Controller
                                         "message" => "Something went wrong",
                                     ], 200);
                                 }
-    
                             } else {
                                 return response()->json([
                                     "status" => true,
@@ -323,14 +298,13 @@ class MerchantController extends Controller
                                 "message" => "Insufficient funds to request this asset",
                             ], 200);
                         }
-    
                     } else {
                         return response()->json([
                             "status" => true,
                             "message" => "Something went wrong",
                         ], 200);
                     }
-                }else{
+                } else {
                     return response()->json([
                         "status" => true,
                         "message" => "Assets not available in stock of your requested units :(",
@@ -461,7 +435,7 @@ class MerchantController extends Controller
                         $asset->units = $asset->units - $is_exist->units;
                         $asset->save();
                     }
-                }else{
+                } else {
                     $user = User::where("id", $user_id)->first();
                     $user->account_balance = $user->account_balance + ($is_exist->units * $is_exist->deposit_amount);
                     $user->save();
@@ -491,69 +465,30 @@ class MerchantController extends Controller
     {
         try {
             $today_date = Carbon::now("Africa/Nairobi")->toDateString();
-            $transactions = MerchantTransaction::where("merchant_id", $id)
-                ->wherenull("paid_on")
-                ->groupBy("asset_id")
-                ->selectRaw("asset_id, count(*) as total_due_count")
-                ->where("due_date", "<=", $today_date)
-                ->get();
 
-            $total_due_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count == 1) {
-                    $total_due_id[] = $transaction->asset_id;
-                }
-            }
             $total_due_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', $today_date)
                 ->wherenull("paid_on")
                 ->sum("amount");
-            $total_pending_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 1) {
-                    $total_pending_id[] = $transaction->asset_id;
-                }
-            }
+
             $total_pending_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_pending_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(1))
                 ->wherenull("paid_on")
                 ->sum("amount");
 
-            $total_over_due_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 2) {
-                    $total_over_due_id[] = $transaction->asset_id;
-                }
-            }
+
             $total_over_due_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_over_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
                 ->wherenull("paid_on")
                 ->sum("amount");
 
-            $total_past_over_due_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 3) {
-                    $total_past_over_due_id[] = $transaction->asset_id;
-                }
-            }
             $total_past_over_due_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_past_over_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
                 ->wherenull("paid_on")
                 ->sum("amount");
 
-            $total_defaulted_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 4) {
-                    $total_defaulted_id[] = $transaction->asset_id;
-                }
-            }
             $total_defaulted_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_defaulted_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
                 ->wherenull("paid_on")
                 ->sum("amount");
 
@@ -577,209 +512,233 @@ class MerchantController extends Controller
     {
         try {
             $today_date = Carbon::now("Africa/Nairobi")->toDateString();
-            $transactions = MerchantTransaction::where("merchant_id", $id)
-                ->wherenull("paid_on")
-                ->groupBy("asset_id")
-                ->selectRaw("asset_id, count(*) as total_due_count")
-                ->where("due_date", "<=", $today_date)
-                ->get();
 
-            if($type == "today"){
-                $total_due_id = array();
-                foreach ($transactions as $transaction) {
-                    if ($transaction->total_due_count == 1) {
-                        $total_due_id[] = $transaction->asset_id;
-                    }
-                }
+            if ($type == "today") {
+
                 $total_due_amount = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_due_id)
-                    ->where("due_date", "<=", $today_date)
+                    ->whereDate('due_date', $today_date)
                     ->wherenull("paid_on")
                     ->sum("amount");
-                $get_balance = User::select("account_balance")->where("id", $id)->first();
-                
 
-                if($get_balance->account_balance >= $total_due_amount){
+                $get_balance = User::select("account_balance")->where("id", $id)->first();
+
+
+                if ($get_balance->account_balance >= $total_due_amount) {
                     $total_due_invoice = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_due_id)
-                    ->where("due_date", "<=", $today_date)
-                    ->wherenull("paid_on")
-                    ->pluck("id");
+                        ->where("due_date", "=", $today_date)
+                        ->wherenull("paid_on")
+                        ->pluck("id");
 
                     MerchantTransaction::whereIn("id", $total_due_invoice)
                         ->update([
                             "paid_on" => $today_date
                         ]);
-                    $get_balance->account_balance = $get_balance->account_balance - $total_due_amount;
-                    $get_balance->save();
+                    User::where('id', $id)->update([
+                        'account_balance' => $get_balance->account_balance - $total_due_amount
+                    ]);
+
+                    foreach ($total_due_invoice as $invoice_id) {
+                        $specific_invoice = MerchantTransaction::where("merchant_id", $id)
+                            ->where('id', $invoice_id)
+                            ->first();
+
+
+                        $order = MerchantAssetOrder::where("id", $specific_invoice->order_id)->first();
+                        $order->total_out_standing_amount = $order->total_out_standing_amount - $specific_invoice->amount;
+                        $order->save();
+                    }
+
+
+
+
                     return response()->json([
                         "status" => true,
                         "message" => "Successfully Paid :)",
                     ], 200);
-                }else{
+                } else {
                     return response()->json([
                         "status" => true,
                         "message" => "You have insufficient funds to pay.",
                     ], 200);
                 }
-            }else if($type == "pending"){
-                $total_pending_id = array();
-                foreach ($transactions as $transaction) {
-                    if ($transaction->total_due_count >= 1) {
-                        $total_pending_id[] = $transaction->asset_id;
-                    }
-                }
+            } else if ($type == "pending") {
+
                 $total_pending_amount = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_pending_id)
-                    ->where("due_date", "<=", $today_date)
+                    ->whereDate('due_date', now("Africa/Nairobi")->subDays(1))
                     ->wherenull("paid_on")
                     ->sum("amount");
 
                 $get_balance = User::select("account_balance")->where("id", $id)->first();
-                
 
-                if($get_balance->account_balance >= $total_pending_amount){
+
+                if ($get_balance->account_balance >= $total_pending_amount) {
                     $total_pending_invoice = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_pending_id)
-                    ->where("due_date", "<=", $today_date)
-                    ->wherenull("paid_on")
-                    ->pluck("id");
+                        ->whereDate('due_date', now("Africa/Nairobi")->subDays(1))
+                        ->wherenull("paid_on")
+                        ->pluck("id");
 
                     MerchantTransaction::whereIn("id", $total_pending_invoice)
                         ->update([
                             "paid_on" => $today_date
                         ]);
-                    $get_balance->account_balance = $get_balance->account_balance - $total_pending_amount;
-                    $get_balance->save();
+
+                    User::where('id', $id)->update([
+                        'account_balance' => $get_balance->account_balance - $total_pending_amount
+                    ]);
+
+                    foreach ($total_pending_invoice as $invoice_id) {
+                        $specific_invoice = MerchantTransaction::where("merchant_id", $id)
+                            ->where('id', $invoice_id)
+                            ->first();
+
+
+                        $order = MerchantAssetOrder::where("id", $specific_invoice->order_id)->first();
+                        $order->total_out_standing_amount = $order->total_out_standing_amount - $specific_invoice->amount;
+                        $order->save();
+                    }
                     return response()->json([
                         "status" => true,
                         "message" => "Successfully Paid :)",
                     ], 200);
-                }else{
+                } else {
                     return response()->json([
                         "status" => true,
                         "message" => "You have insufficient funds to pay.",
                     ], 200);
                 }
-            }else if($type == "over_due"){
-                $total_over_due_id = array();
-                foreach ($transactions as $transaction) {
-                    if ($transaction->total_due_count >= 2) {
-                        $total_over_due_id[] = $transaction->asset_id;
-                    }
-                }
+            } else if ($type == "over_due") {
+
                 $total_over_due_amount = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_over_due_id)
-                    ->where("due_date", "<=", $today_date)
+                    ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
                     ->wherenull("paid_on")
                     ->sum("amount");
 
                 $get_balance = User::select("account_balance")->where("id", $id)->first();
-                
 
-                if($get_balance->account_balance >= $total_over_due_amount){
+
+                if ($get_balance->account_balance >= $total_over_due_amount) {
                     $total_over_due_invoice = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_over_due_id)
-                    ->where("due_date", "<=", $today_date)
-                    ->wherenull("paid_on")
-                    ->pluck("id");
+                        ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
+                        ->wherenull("paid_on")
+                        ->pluck("id");
 
                     MerchantTransaction::whereIn("id", $total_over_due_invoice)
                         ->update([
                             "paid_on" => $today_date
                         ]);
-                    $get_balance->account_balance = $get_balance->account_balance - $total_over_due_amount;
-                    $get_balance->save();
+
+                    User::where('id', $id)->update([
+                        'account_balance' => $get_balance->account_balance - $total_over_due_amount
+                    ]);
+
+                    foreach ($total_over_due_invoice as $invoice_id) {
+                        $specific_invoice = MerchantTransaction::where("merchant_id", $id)
+                            ->where('id', $invoice_id)
+                            ->first();
+
+
+                        $order = MerchantAssetOrder::where("id", $specific_invoice->order_id)->first();
+                        $order->total_out_standing_amount = $order->total_out_standing_amount - $specific_invoice->amount;
+                        $order->save();
+                    }
                     return response()->json([
                         "status" => true,
                         "message" => "Successfully Paid :)",
                     ], 200);
-                }else{
+                } else {
                     return response()->json([
                         "status" => true,
                         "message" => "You have insufficient funds to pay.",
                     ], 200);
                 }
-    
-            }else if($type == "past_over_due"){
-                $total_past_over_due_id = array();
-                foreach ($transactions as $transaction) {
-                    if ($transaction->total_due_count >= 3) {
-                        $total_past_over_due_id[] = $transaction->asset_id;
-                    }
-                }
+            } else if ($type == "past_over_due") {
+
                 $total_past_over_due_amount = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_past_over_due_id)
-                    ->where("due_date", "<=", $today_date)
+                    ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
                     ->wherenull("paid_on")
                     ->sum("amount");
-
-                $get_balance = User::select("account_balance")->where("id", $id)->first();
                 
+                $get_balance = User::select("account_balance")->where("id", $id)->first();
 
-                if($get_balance->account_balance >= $total_past_over_due_amount){
+
+                if ($get_balance->account_balance >= $total_past_over_due_amount) {
                     $total_past_over_due_invoice = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_past_over_due_id)
-                    ->where("due_date", "<=", $today_date)
-                    ->wherenull("paid_on")
-                    ->pluck("id");
+                        ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
+                        ->wherenull("paid_on")
+                        ->pluck("id");
 
                     MerchantTransaction::whereIn("id", $total_past_over_due_invoice)
                         ->update([
                             "paid_on" => $today_date
                         ]);
-                    $get_balance->account_balance = $get_balance->account_balance - $total_past_over_due_amount;
-                    $get_balance->save();
+                    User::where('id', $id)->update([
+                        'account_balance' => $get_balance->account_balance - $total_past_over_due_amount
+                    ]);
+
+                    foreach ($total_past_over_due_invoice as $invoice_id) {
+                        $specific_invoice = MerchantTransaction::where("merchant_id", $id)
+                            ->where('id', $invoice_id)
+                            ->first();
+
+
+                        $order = MerchantAssetOrder::where("id", $specific_invoice->order_id)->first();
+                        $order->total_out_standing_amount = $order->total_out_standing_amount - $specific_invoice->amount;
+                        $order->save();
+                    }
                     return response()->json([
                         "status" => true,
                         "message" => "Successfully Paid :)",
                     ], 200);
-                }else{
+                } else {
                     return response()->json([
                         "status" => true,
                         "message" => "You have insufficient funds to pay.",
                     ], 200);
                 }
-            }else if($type == "defaulted"){
-                $total_defaulted_id = array();
-                foreach ($transactions as $transaction) {
-                    if ($transaction->total_due_count >= 4) {
-                        $total_defaulted_id[] = $transaction->asset_id;
-                    }
-                }
+            } else if ($type == "defaulted") {
+
                 $total_defaulted_amount = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_defaulted_id)
-                    ->where("due_date", "<=", $today_date)
+                    ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
                     ->wherenull("paid_on")
                     ->sum("amount");
 
                 $get_balance = User::where("id", $id)->first();
-                
-                
-                if($get_balance->account_balance >= $total_defaulted_amount){
+
+
+                if ($get_balance->account_balance >= $total_defaulted_amount) {
                     $total_defaulted_invoice = MerchantTransaction::where("merchant_id", $id)
-                    ->whereIn("asset_id", $total_defaulted_id)
-                    ->where("due_date", "<=", $today_date)
-                    ->wherenull("paid_on")
-                    ->pluck("id");
+                        ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
+                        ->wherenull("paid_on")
+                        ->pluck("id");
 
                     MerchantTransaction::whereIn("id", $total_defaulted_invoice)
                         ->update([
                             "paid_on" => $today_date
                         ]);
-                    $get_balance->account_balance = $get_balance->account_balance - $total_defaulted_amount;
-                    $get_balance->save();
+                    User::where('id', $id)->update([
+                        'account_balance' => $get_balance->account_balance - $total_defaulted_amount
+                    ]);
+                    foreach ($total_defaulted_invoice as $invoice_id) {
+                        $specific_invoice = MerchantTransaction::where("merchant_id", $id)
+                            ->where('id', $invoice_id)
+                            ->first();
+
+
+                        $order = MerchantAssetOrder::where("id", $specific_invoice->order_id)->first();
+                        $order->total_out_standing_amount = $order->total_out_standing_amount - $specific_invoice->amount;
+                        $order->save();
+                    }
                     return response()->json([
                         "status" => true,
                         "message" => "Successfully Paid :)",
                     ], 200);
-                }else{
+                } else {
                     return response()->json([
                         "status" => true,
                         "message" => "You have insufficient funds to pay.",
                     ], 200);
                 }
-            }else{
+            } else {
                 return response()->json([
                     "status" => false,
                     "message" => "Something went wrong",
@@ -798,29 +757,30 @@ class MerchantController extends Controller
         $today_date = Carbon::now("Africa/Nairobi")->toDateString();
         $transactions = MerchantTransaction::where("merchant_id", $id)
             ->wherenull("paid_on")
-            ->groupBy("asset_id")
-            ->selectRaw("asset_id, count(*) as total_due_count")
-            ->where("due_date", "<=", $today_date)
+            ->groupBy("order_id")
+            ->selectRaw("order_id, count(*) as total_due_count")
+            ->where("due_date", "<", $today_date)
             ->get();
 
         if ($type == "today") {
-            $total_due_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count == 1) {
-                    $total_due_id[] = $transaction->asset_id;
-                }
-            }
+
+            $total_due_id =  MerchantTransaction::where("merchant_id", $id)
+                ->whereDate('due_date', $today_date)
+                ->wherenull("paid_on")
+                ->pluck("order_id");
+
             $total_due_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', $today_date)
                 ->wherenull("paid_on")
                 ->sum("amount");
+
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
                 ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.asset_id", "tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
-                ->whereIn("tbl_acp_merchant_transaction.asset_id", $total_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn('tbl_acp_merchant_transaction.order_id', $total_due_id)
+                ->whereDate('due_date', $today_date)
                 ->wherenull("paid_on")
+                ->groupBy("tbl_acp_merchant_transaction.order_id")
                 ->select("tbl_acp_merchant_transaction.id", "tbl_acp_assets.asset_name as asset_name", "tbl_acp_assets.image as image", "tbl_acp_merchant_transaction.amount", "tbl_acp_merchant_asset_order.units", "tbl_acp_merchant_asset_order.unit_cost")
                 ->get();
 
@@ -837,25 +797,26 @@ class MerchantController extends Controller
                     "total" => $total_due_amount,
                 ], 204);
             }
-
         } else if ($type == "pending") {
-            $total_pending_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 1) {
-                    $total_pending_id[] = $transaction->asset_id;
-                }
-            }
+
+            $total_pending_id = MerchantTransaction::where("merchant_id", $id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(1))
+                ->wherenull("paid_on")
+                ->pluck("order_id");
+
             $total_pending_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_pending_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("order_id", $total_pending_id)
+                ->where("due_date", "<", $today_date)
                 ->wherenull("paid_on")
                 ->sum("amount");
+
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
                 ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.asset_id", "tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
-                ->whereIn("tbl_acp_merchant_transaction.asset_id", $total_pending_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("tbl_acp_merchant_transaction.order_id", $total_pending_id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(1))
                 ->wherenull("paid_on")
+                ->groupBy("tbl_acp_merchant_transaction.order_id")
                 ->select("tbl_acp_merchant_transaction.id", "tbl_acp_assets.asset_name as asset_name", "tbl_acp_assets.image as image", "tbl_acp_merchant_transaction.amount", "tbl_acp_merchant_asset_order.units", "tbl_acp_merchant_asset_order.unit_cost")
                 ->get();
 
@@ -873,24 +834,25 @@ class MerchantController extends Controller
                 ], 204);
             }
         } else if ($type == "over_due") {
-            $total_over_due_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 2) {
-                    $total_over_due_id[] = $transaction->asset_id;
-                }
-            }
+
+            $total_over_due_id = MerchantTransaction::where("merchant_id", $id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
+                ->wherenull("paid_on")
+                ->pluck("order_id");
 
             $total_over_due_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_over_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("order_id", $total_over_due_id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
                 ->wherenull("paid_on")
                 ->sum("amount");
+
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
                 ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.asset_id", "tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
-                ->whereIn("tbl_acp_merchant_transaction.asset_id", $total_over_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("tbl_acp_merchant_transaction.order_id", $total_over_due_id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(2))
                 ->wherenull("paid_on")
+                ->groupBy("tbl_acp_merchant_transaction.order_id")
                 ->select("tbl_acp_merchant_transaction.id", "tbl_acp_assets.asset_name as asset_name", "tbl_acp_assets.image as image", "tbl_acp_merchant_transaction.amount", "tbl_acp_merchant_asset_order.units", "tbl_acp_merchant_asset_order.unit_cost")
                 ->get();
 
@@ -908,24 +870,24 @@ class MerchantController extends Controller
                 ], 204);
             }
         } else if ($type == "past_over_due") {
-            $total_past_over_due_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 3) {
-                    $total_past_over_due_id[] = $transaction->asset_id;
-                }
-            }
+            $total_past_over_due_id = MerchantTransaction::where("merchant_id", $id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
+                ->wherenull("paid_on")
+                ->pluck("order_id");
+
             $total_past_over_due_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_past_over_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("order_id", $total_past_over_due_id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
                 ->wherenull("paid_on")
                 ->sum("amount");
 
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
                 ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.asset_id", "tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
-                ->whereIn("tbl_acp_merchant_transaction.asset_id", $total_past_over_due_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("tbl_acp_merchant_transaction.order_id", $total_past_over_due_id)
+                ->whereDate('due_date', now("Africa/Nairobi")->subDays(3))
                 ->wherenull("paid_on")
+                ->groupBy("tbl_acp_merchant_transaction.order_id")
                 ->select("tbl_acp_merchant_transaction.id", "tbl_acp_assets.asset_name as asset_name", "tbl_acp_assets.image as image", "tbl_acp_merchant_transaction.amount", "tbl_acp_merchant_asset_order.units", "tbl_acp_merchant_asset_order.unit_cost")
                 ->get();
 
@@ -943,23 +905,24 @@ class MerchantController extends Controller
                 ], 204);
             }
         } else if ($type == "defaulted") {
-            $total_defaulted_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 4) {
-                    $total_defaulted_id[] = $transaction->asset_id;
-                }
-            }
+
+            $total_defaulted_id = MerchantTransaction::where("merchant_id", $id)
+                ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
+                ->wherenull("paid_on")
+                ->pluck("order_id");
+
             $total_defaulted_amount = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_defaulted_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("order_id", $total_defaulted_id)
+                ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
                 ->wherenull("paid_on")
                 ->sum("amount");
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
                 ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.asset_id", "tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
-                ->whereIn("tbl_acp_merchant_transaction.asset_id", $total_defaulted_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("tbl_acp_merchant_transaction.order_id", $total_defaulted_id)
+                ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
                 ->wherenull("paid_on")
+                ->groupBy("tbl_acp_merchant_transaction.order_id")
                 ->select("tbl_acp_merchant_transaction.id", "tbl_acp_assets.asset_name as asset_name", "tbl_acp_assets.image as image", "tbl_acp_merchant_transaction.amount", "tbl_acp_merchant_asset_order.units", "tbl_acp_merchant_asset_order.unit_cost")
                 ->get();
 
@@ -977,7 +940,6 @@ class MerchantController extends Controller
                 ], 204);
             }
         }
-
     }
 
     public function payNow($invoice_id, $merchant_id)
@@ -1017,14 +979,12 @@ class MerchantController extends Controller
                         "message" => "You have insufficient funds to pay this invoice.",
                     ], 200);
                 }
-
             } else {
                 return response()->json([
                     "status" => true,
                     "message" => "Something went wrong :(",
                 ], 200);
             }
-
         } catch (Exception $ex) {
             return response()->json([
                 "status" => true,
@@ -1036,29 +996,15 @@ class MerchantController extends Controller
     public function myAssets($id)
     {
         try {
-            $today_date = Carbon::now("Africa/Nairobi")->toDateString();
-            $transactions = MerchantTransaction::where("merchant_id", $id)
-                ->wherenull("paid_on")
-                ->groupBy("asset_id")
-                ->selectRaw("asset_id, count(*) as total_due_count")
-                ->where("due_date", "<=", $today_date)
-                ->get();
 
-            
             $ongoing_info = MerchantTransaction::where("merchant_id", $id)
                 ->wherenull("paid_on")
                 ->selectRaw("sum(amount) as amount, count(*) as payments_left, due_date as next_payment")
                 ->first();
 
-            $total_defaulted_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 4) {
-                    $total_defaulted_id[] = $transaction->asset_id;
-                }
-            }
+
             $defaulted_info = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $total_defaulted_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
                 ->wherenull("paid_on")
                 ->selectRaw("sum(amount) as amount, count(*) as missed_payments, due_date as next_payment")
                 ->first();
@@ -1066,9 +1012,10 @@ class MerchantController extends Controller
             $is_completed = MerchantAssetOrder::where("merchant_id", $id)
                 ->where("status", "delivered")
                 ->where("total_out_standing_amount", 0)
-                ->pluck("asset_id");
+                ->pluck("id");
+
             $completed_info = MerchantTransaction::where("merchant_id", $id)
-                ->whereIn("asset_id", $is_completed)
+                ->whereIn("order_id", $is_completed)
                 ->selectRaw("sum(amount) as amount, count(*) as total_payments, due_date as next_payment")
                 ->first();
             return response()->json([
@@ -1088,28 +1035,27 @@ class MerchantController extends Controller
     public function ongoingAssetStats($id)
     {
         try {
-            $today_date = Carbon::now("Africa/Nairobi")->toDateString();
-        
+
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
                 ->wherenull("paid_on")
-                ->groupBy("tbl_acp_merchant_transaction.order_id")
                 ->join("tbl_acp_merchant_assets", "tbl_acp_merchant_assets.id", "tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.id", "tbl_acp_merchant_transaction.order_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
+                ->groupBy('tbl_acp_merchant_transaction.order_id')
                 ->selectRaw("tbl_acp_merchant_transaction.asset_id,tbl_acp_merchant_assets.asset_name, tbl_acp_assets.image,tbl_acp_merchant_asset_order.total_out_standing_amount as total_out_standing_amount,tbl_acp_merchant_asset_order.deposit_amount as deposit_amount,tbl_acp_merchant_asset_order.units as units,tbl_acp_merchant_asset_order.unit_cost as unit_cost,tbl_acp_merchant_asset_order.installment as installment,tbl_acp_merchant_asset_order.payment_frequency as payment_frequency, sum(tbl_acp_merchant_transaction.amount) as amount, count(*) as payments_left")
                 ->get();
 
-                if(count($data) > 0){
-                    return response()->json([
-                        "status" => true,
-                        "data" => $data,
-                    ], 200);
-                }else{
-                    return response()->json([
-                        "status" => true,
-                        "data" => $data,
-                    ], 204);
-                }
+            if (count($data) > 0) {
+                return response()->json([
+                    "status" => true,
+                    "data" => $data,
+                ], 200);
+            } else {
+                return response()->json([
+                    "status" => true,
+                    "data" => $data,
+                ], 204);
+            }
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
@@ -1121,43 +1067,31 @@ class MerchantController extends Controller
     public function defaultedAssetStats($id)
     {
         try {
-            $today_date = Carbon::now("Africa/Nairobi")->toDateString();
-            $transactions = MerchantTransaction::where("merchant_id", $id)
+            $defaulted_info = MerchantTransaction::where("merchant_id", $id)
+                ->whereDate('due_date', '<=', now("Africa/Nairobi")->subDays(4))
                 ->wherenull("paid_on")
-                ->groupBy("asset_id")
-                ->selectRaw("asset_id, count(*) as total_due_count")
-                ->where("due_date", "<=", $today_date)
-                ->get();
-
-            $total_defaulted_id = array();
-            foreach ($transactions as $transaction) {
-                if ($transaction->total_due_count >= 4) {
-                    $total_defaulted_id[] = $transaction->asset_id;
-                }
-            }
+                ->pluck("order_id");
 
             $data = MerchantTransaction::where("tbl_acp_merchant_transaction.merchant_id", $id)
-                ->whereIn("tbl_acp_merchant_transaction.asset_id", $total_defaulted_id)
-                ->where("due_date", "<=", $today_date)
+                ->whereIn("tbl_acp_merchant_transaction.order_id", $defaulted_info)
                 ->wherenull("paid_on")
-                ->groupBy("tbl_acp_merchant_transaction.asset_id")
                 ->join("tbl_acp_merchant_assets", "tbl_acp_merchant_assets.id", "tbl_acp_merchant_transaction.asset_id")
-                ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.asset_id", "tbl_acp_merchant_transaction.asset_id")
+                ->join("tbl_acp_merchant_asset_order", "tbl_acp_merchant_asset_order.id", "tbl_acp_merchant_transaction.order_id")
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
+                ->groupBy('tbl_acp_merchant_transaction.order_id')
                 ->selectRaw("tbl_acp_merchant_transaction.asset_id,tbl_acp_merchant_assets.asset_name, tbl_acp_assets.image,tbl_acp_merchant_asset_order.total_out_standing_amount as total_out_standing_amount,tbl_acp_merchant_asset_order.deposit_amount as deposit_amount,tbl_acp_merchant_asset_order.units as units,tbl_acp_merchant_asset_order.unit_cost as unit_cost,tbl_acp_merchant_asset_order.installment as installment,tbl_acp_merchant_asset_order.payment_frequency as payment_frequency, sum(tbl_acp_merchant_transaction.amount) as amount, count(*) as payments_left")
                 ->get();
-            if(count($data) > 0){
+            if (count($data) > 0) {
                 return response()->json([
                     "status" => true,
                     "data" => $data,
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "data" => $data,
                 ], 204);
             }
-            
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
@@ -1182,17 +1116,17 @@ class MerchantController extends Controller
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
                 ->selectRaw("tbl_acp_merchant_transaction.asset_id,tbl_acp_merchant_transaction.order_id,tbl_acp_merchant_assets.asset_name, tbl_acp_assets.image,tbl_acp_merchant_asset_order.total_out_standing_amount as total_out_standing_amount,tbl_acp_merchant_asset_order.deposit_amount as deposit_amount,tbl_acp_merchant_asset_order.units as units,tbl_acp_merchant_asset_order.unit_cost as unit_cost,tbl_acp_merchant_asset_order.installment as installment,tbl_acp_merchant_asset_order.payment_frequency as payment_frequency, sum(tbl_acp_merchant_transaction.amount) as amount, count(*) as total_payments")
                 ->get();
-                if(count($data) > 0){
-                    return response()->json([
-                        "status" => true,
-                        "data" => $data,
-                    ], 200);
-                }else{
-                    return response()->json([
-                        "status" => true,
-                        "data" => $data,
-                    ], 204);
-                }
+            if (count($data) > 0) {
+                return response()->json([
+                    "status" => true,
+                    "data" => $data,
+                ], 200);
+            } else {
+                return response()->json([
+                    "status" => true,
+                    "data" => $data,
+                ], 204);
+            }
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
@@ -1212,13 +1146,13 @@ class MerchantController extends Controller
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
                 ->selectRaw("tbl_acp_merchant_transaction.asset_id,tbl_acp_merchant_transaction.order_id,tbl_acp_merchant_assets.asset_name, tbl_acp_assets.image,tbl_acp_merchant_asset_order.total_out_standing_amount as total_out_standing_amount,tbl_acp_merchant_asset_order.deposit_amount as deposit_amount,tbl_acp_merchant_asset_order.units as units,tbl_acp_merchant_asset_order.unit_cost as unit_cost,tbl_acp_merchant_asset_order.installment as installment,tbl_acp_merchant_asset_order.payment_frequency as payment_frequency, sum(tbl_acp_merchant_transaction.amount) as amount, count(*) as total_payments")
                 ->first();
-            if(count($transactions) > 0){
+            if (count($transactions) > 0) {
                 return response()->json([
                     "status" => true,
                     "asset_info" => $asset_info,
                     "transactions" => $transactions,
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "asset_info" => $asset_info,
@@ -1258,15 +1192,15 @@ class MerchantController extends Controller
                 ->join("tbl_acp_assets", "tbl_acp_assets.id", "tbl_acp_merchant_transaction.asset_id")
                 ->selectRaw("tbl_acp_merchant_transaction.asset_id,tbl_acp_merchant_transaction.order_id as order_id,tbl_acp_merchant_assets.asset_name, tbl_acp_assets.image,sum(tbl_acp_merchant_transaction.amount) as amount")
                 ->get();
-           
-            if(count($assets_info) > 0){
+
+            if (count($assets_info) > 0) {
                 return response()->json([
                     "status" => true,
                     "total_receipt" => $total_receipt,
                     "total_paid" => $total_paid,
                     "assets_info" => $assets_info,
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "total_receipt" => $total_receipt,
@@ -1291,20 +1225,88 @@ class MerchantController extends Controller
             $transactions_info = MerchantTransaction::where("order_id", $order_id)
                 ->wherenotnull("paid_on")
                 ->get();
-            if(count($transactions_info) > 0){
+            if (count($transactions_info) > 0) {
                 return response()->json([
                     "status" => true,
                     "total_paid" => $total_paid,
                     "transactions_info" => $transactions_info,
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     "status" => true,
                     "total_paid" => $total_paid,
                     "transactions_info" => $transactions_info,
                 ], 204);
             }
-            
+        } catch (Exception $ex) {
+            return response()->json([
+                "status" => false,
+                "message" => $ex->getMessage(),
+            ], 204);
+        }
+    }
+
+    public function getCountries()
+    {
+        try {
+            $cities = City::get();
+            if (count($cities) > 0) {
+                return response()->json([
+                    "status" => true,
+                    "cities" => $cities
+                ], 200);
+            } else {
+                return response()->json([
+                    "status" => true,
+                    "cities" => $cities
+                ], 204);
+            }
+        } catch (Exception $ex) {
+            return response()->json([
+                "status" => false,
+                "message" => $ex->getMessage(),
+            ], 204);
+        }
+    }
+
+    public function getRegions($id)
+    {
+        try {
+            $regions = Region::where('city', $id)->get();
+            if (count($regions) > 0) {
+                return response()->json([
+                    "status" => true,
+                    "regions" => $regions
+                ], 200);
+            } else {
+                return response()->json([
+                    "status" => true,
+                    "regions" => $regions
+                ], 204);
+            }
+        } catch (Exception $ex) {
+            return response()->json([
+                "status" => false,
+                "message" => $ex->getMessage(),
+            ], 204);
+        }
+    }
+
+    public function getLocations($id)
+    {
+        try {
+            $locations = Location::where('region', $id)->get();
+            if (count($locations) > 0) {
+                return response()->json([
+                    "status" => true,
+                    "locations" => $locations
+                ], 200);
+            } else {
+                return response()->json([
+                    "status" => true,
+                    "locations" => $locations
+                ], 204);
+            }
         } catch (Exception $ex) {
             return response()->json([
                 "status" => false,
