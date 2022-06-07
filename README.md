@@ -211,10 +211,62 @@ Action: App\Http\Controllers\ACP\Merchant\InvoiceController@index
 
 
 
+We create Unit Testing to Test whole ACP site:
+All test we can find under root directory then go to test folder below I explain how you run test cases one by onw or all at once through command.
+
+First you need to go to server.
+![Screenshot (27)](https://user-images.githubusercontent.com/95353455/172368978-152bf2ae-ac65-4c36-9d69-d77f4599c330.png)
+Then you need to type:
+cd public_html and press enter
+
+![Screenshot (28)](https://user-images.githubusercontent.com/95353455/172369320-59c10f00-b5bd-48a8-a1e0-81e55d6ffd79.png)
+AFter run the command your screen look like below image:
+
+![Screenshot (29)](https://user-images.githubusercontent.com/95353455/172369466-f4e9b192-4a09-4f3f-b721-561d4f3bbe26.png)
+
+If you want to run all test at once:
+Run below command:
+
+vendor/bin/phpunit
+
+If you want to run test one by one follow below instructions:
+
+Test Have three Folders:
+
+1.SuperAdmin
+2.Merchant
+3.Asset Provider
+
+SuperAdmin Tests:
+run below commands one by one
+
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/DashboardTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AnnouncementTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AssetProviderTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AssetsTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/CategoryTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/FaqTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/GroupTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/InvoicesTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/PaymentsTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/PerformanceTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/ProductCatalogTest.php
+vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/SubGroupTest.php
+
+Merchant Test:
+run below commands one by one
+
+vendor/bin/phpunit tests/Feature/ACP/Merchant/DashboardTest.php
+vendor/bin/phpunit tests/Feature/ACP/Merchant/CatalogTest.php
+vendor/bin/phpunit tests/Feature/ACP/Merchant/InvoiceTest.php
 
 
+Asset Provider Test:
+run below commands one by one:
 
-
+vendor/bin/phpunit tests/Feature/ACP/AssetProvider/DashboardTest.php
+vendor/bin/phpunit tests/Feature/ACP/AssetProvider/ProductCatalogTest.php
+vendor/bin/phpunit tests/Feature/ACP/AssetProvider/TransactionTest.php
 
 
 
