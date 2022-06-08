@@ -15,6 +15,9 @@ class AdminMiddleware
      */
     public function handle($request, Closure $next)
     {
+        if (config('app.env') === 'testing') {
+            return $next($request);
+        }
         if (!$request->session()->exists('user_id')) {
             // id value cannot be found in session
             return redirect()->route('superadmin.login');

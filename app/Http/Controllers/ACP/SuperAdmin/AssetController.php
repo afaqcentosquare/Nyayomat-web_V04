@@ -9,6 +9,8 @@ use App\Models\MerchantAsset;
 use App\Models\MerchantAssetOrder;
 use App\Models\MerchantTransaction;
 use App\Models\User;
+use Exception;
+
 class AssetController extends Controller
 {
     /**

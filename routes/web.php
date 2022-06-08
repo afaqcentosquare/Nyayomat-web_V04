@@ -27,7 +27,21 @@ Route::post('webhook/stripe', 'WebhookController@handleStripeCallback'); 		// St
 //USSD
 Route::post('/ussd/{key}', 'USSD\USSDController@index');
 
+//URI to get routes list start
+// Route::get('getrouteslist', function()
+// {
+//     header('Content-Type: application/excel');
+//     header('Content-Disposition: attachment; filename="routes.csv"');
 
+//     $routes = Route::getRoutes();
+//     $fp = fopen('php://output', 'w');
+//     fputcsv($fp, ['METHOD', 'URI', 'NAME', 'ACTION']);
+//     foreach ($routes as $route) {
+//         fputcsv($fp, [head($route->methods()) , $route->uri(), $route->getName(), $route->getActionName()]);
+//     }
+//     fclose($fp);
+// });
+//URI to get routes list end 
 
 /**
  * 
@@ -450,15 +464,15 @@ Route::get('/get-listed', function () {
 |
  */
 Route::get('/basic_email', 'ACP\Mail\MailController@basic_email');
-Route::get('/linkstorage', function () {
-    Artisan::call('storage:link');
-});
+// Route::get('/linkstorage', function () {
+//     Artisan::call('storage:link');
+// });
 
-//Route cache:
-Route::get('/route-cache', function() {
-    $exitCode = Artisan::call('route:cache');
-    return '<h1>Routes cached</h1>';
-});
+// //Route cache:
+// Route::get('/route-cache', function() {
+//     $exitCode = Artisan::call('route:cache');
+//     return '<h1>Routes cached</h1>';
+// });
 
 /**
  * Frontend Routes Start

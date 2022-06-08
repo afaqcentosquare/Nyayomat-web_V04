@@ -73,7 +73,7 @@
 
 
 @push('navs')
-@include('merchant.nav') 
+@include('acp.merchant.nav') 
 @endpush
 
 @section('content')

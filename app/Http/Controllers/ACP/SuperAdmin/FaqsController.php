@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Faq;
 use App\Models\FaqTopic;
-
+use Exception;
 class FaqsController extends Controller
 {
     /**

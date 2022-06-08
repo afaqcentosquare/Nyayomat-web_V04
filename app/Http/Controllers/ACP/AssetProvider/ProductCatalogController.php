@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Asset;
 use App\Models\MerchantAssetOrder;
 use Carbon\Carbon;
+use Exception;
 
 class ProductCatalogController extends Controller
 {

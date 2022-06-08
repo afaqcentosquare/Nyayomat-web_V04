@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Group;
 use App\Models\SubGroup;
 use App\Models\Category;
-
+use Exception;
 class CategoryController extends Controller
 {
     /**
@@ -18,7 +18,6 @@ class CategoryController extends Controller
     public function index()
     {
         $groups = Group::withCount("subGroup")->withCount("categories")->get();
-        //return response()->json($groups);
         return view('acp.superadmin.categories.index')->with("groups", $groups);
     }
 
