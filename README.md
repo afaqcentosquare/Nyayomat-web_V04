@@ -46,6 +46,7 @@ Contains the ACP Merchant API, ACP Dashboard & Ecommerce related files.
 
 2.0.1.1	Middleware
 
+
 #### **Resources** 
 
 Contains the ACP Merchant API, ACP Dashboard & Ecommerce related files.
@@ -76,6 +77,7 @@ Contains the ACP Merchant API, ACP Dashboard & Ecommerce related files.
 
 3.0.1.10	plugins
 
+
 #### **Routes** 
 
 Contains the ACP Merchant API, ACP Dashboard & Ecommerce related changed files.
@@ -87,6 +89,7 @@ Contains the ACP Merchant API, ACP Dashboard & Ecommerce related changed files.
 4.0.2	common
 
 4.0.3	storefront
+
 
 #### **ACP Functionalities** 
 
@@ -110,6 +113,7 @@ Name: superadmin.dashboard
 
 Action: App\Http\Controllers\ACP\SuperAdmin\DashboardController@index
 
+
 2. Asset Provider
 
 Method: GET
@@ -122,6 +126,7 @@ Action: App\Http\Controllers\ACP\SuperAdmin\AssetProviderController@index
 
 Superadmin administers the following actions: 
 
+
 2.1	Suspend, Approve, Decline & Shortlist Asset Provider
 
 Method: GET
@@ -131,6 +136,7 @@ URI: admin/update/assetprovider/status/{id}/{status}
 Name: superadmin.update.assetprovider.status
 
 Action: App\Http\Controllers\ACP\SuperAdmin\AssetProviderController@updateStatus
+
 
 2.2	Add asset on behalf of Asset Provider (After adding Categories section 3 below)
 
@@ -142,6 +148,7 @@ Name: superadmin.asset.store
 
 Action: App\Http\Controllers\ACP\SuperAdmin\AssetController@store
 
+
 3. Categories
 
 Method: GET
@@ -152,7 +159,8 @@ Name: superadmin.categories
 
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@index
 
-Asset categories have following actions
+Asset categories have following actions:
+
 
 3.1 New Group
 
@@ -164,6 +172,7 @@ Name: superadmin.group.store
 
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@storeGroup
 
+
 3.2 Add SubGroup
 
 Method: GET
@@ -173,6 +182,7 @@ URI: admin/subgroup/store
 Name: superadmin.subgroup.store
 
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@storeSubGroup
+
 
 3.3 New Category 
 
@@ -184,6 +194,7 @@ Name: superadmin.categories.store
 
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@store
 
+
 4. Assets
 
 Method: GET
@@ -194,6 +205,7 @@ Name: superadmin.assets
 
 Action: App\Http\Controllers\ACP\SuperAdmin\AssetController@index
 
+
 5. Product Catalog
 
 Method: GET
@@ -203,6 +215,7 @@ URI: admin/productcatalog
 Name: superadmin.productcatalog
 
 Action: App\Http\Controllers\ACP\SuperAdmin\ProductCatalogController@index
+
 
 6. Payments
 
@@ -225,6 +238,7 @@ Name: superadmin.invoices
 
 Action: App\Http\Controllers\ACP\SuperAdmin\InvoiceController@index
 
+
 8. Performance
 
 Method: GET
@@ -234,6 +248,7 @@ URI: admin/performance
 Name: superadmin.performance
 
 Action: App\Http\Controllers\ACP\SuperAdmin\PerformanceController@index
+
 
 9. Merchant Profile
 
@@ -245,6 +260,7 @@ Name: merchant.dashboard
 
 Action: App\Http\Controllers\ACP\Merchant\DashboardController@index
 
+
 10. Merchant Catalog - Browse
 
 Method: GET
@@ -254,6 +270,7 @@ URI: merchant/catalog
 Name: merchant.catalog
 
 Action: App\Http\Controllers\ACP\Merchant\CatalogController@index
+
 
 Merchant Catalog has the following actions:
 
@@ -267,6 +284,7 @@ Name: merchant.asset.request
 
 Action: App\Http\Controllers\ACP\Merchant\CatalogController@store
 
+
 10.2 Received
 
 Method: GET
@@ -276,6 +294,7 @@ URI: merchant/catalog
 Name: merchant.catalog
 
 Action: App\Http\Controllers\ACP\Merchant\CatalogController@index
+
 
 11. Merchant Invoices - Unpaid
 
@@ -287,6 +306,7 @@ Name: merchant.invoices
 
 Action: App\Http\Controllers\ACP\Merchant\InvoiceController@index
 
+
 12. Merchant Invoices - Paid
 
 Method: GET
@@ -296,6 +316,7 @@ URI: merchant/invoices
 Name: merchant.invoices
 
 Action: App\Http\Controllers\ACP\Merchant\InvoiceController@index
+
 
 Asset provider has the following functionalities: 
 
@@ -309,6 +330,7 @@ Name: assetprovider.dashboard
 
 Action: App\Http\Controllers\ACP\AssetProvider\DashboardController@index
 
+
 14. Approve an asset
 
 Method: GET
@@ -319,6 +341,7 @@ Name: assetprovider.productcatalog.update.status
 
 Action: App\Http\Controllers\ACP\AssetProvider\ProductCatalogController@updateStatus
 
+
 15. Asset Provider Catalog - Confirmed
 
 Method: GET
@@ -328,6 +351,7 @@ URI: assetprovider/productcatalog
 Name: assetprovider.productcatalog
 
 Action: App\Http\Controllers\ACP\AssetProvider\ProductCatalogController@index
+
 
 Asset Provider Catalog have the following action
 
@@ -359,7 +383,7 @@ Pre-requisites:
 
 To perform unit tests, 
 
-Download ZIP the code repo - Nyayomat-Web_Production-Environment a
+Download ZIP the code repo - Nyayomat-Web_Production-Environment
 
 Install xampp on your pc with php 7.4 version.
 
@@ -402,6 +426,7 @@ Run the command below:
 
 •	vendor/bin/phpunit
 
+
 For individual tests, follow the instructions below:
 
 The test folder has three sub-folders: 
@@ -411,6 +436,7 @@ The test folder has three sub-folders:
 2.Merchant
 
 3.Asset Provider
+
 
 SuperAdmin Tests:
 
@@ -436,6 +462,7 @@ Run below commands one by one:
 
 •	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/SubGroupTest.php
 
+
 Merchant Test:
 
 Run below commands one by one:
@@ -446,6 +473,7 @@ Run below commands one by one:
 
 •	vendor/bin/phpunit tests/Feature/ACP/Merchant/InvoiceTest.php
 
+
 Asset Provider Test:
 
 Run below commands one by one:
@@ -455,6 +483,7 @@ Run below commands one by one:
 •	vendor/bin/phpunit tests/Feature/ACP/AssetProvider/ProductCatalogTest.php
 
 •	vendor/bin/phpunit tests/Feature/ACP/AssetProvider/TransactionTest.php
+
 
 Common Test:
 
