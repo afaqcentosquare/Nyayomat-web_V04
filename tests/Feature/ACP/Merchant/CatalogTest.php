@@ -34,6 +34,7 @@ class CatalogTest extends TestCase
      */
     public function testAssetRequest()
     {
+        //in this test we are testing emails as well
         $merchant = User::select("users.*","shops.name as shop_name")->join("shops","shops.owner_id","users.id")->first();
         $asset = Asset::first();
         $this->withSession(['merchant_id' => $merchant->id]);

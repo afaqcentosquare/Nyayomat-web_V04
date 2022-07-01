@@ -49,7 +49,8 @@ class ACPUSSDController extends Controller {
     }
 
     private function make_payment($merchant_id, $type) {
-        $callback_url = "https://nyayomat.com/api/merchant/pay/all/$merchant_id/$type";
+        
+        $callback_url = url('/merchant/pay/all/$merchant_id/$type');
         ob_start();
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL,$callback_url);

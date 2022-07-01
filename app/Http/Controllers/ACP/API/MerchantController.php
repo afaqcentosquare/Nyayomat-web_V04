@@ -24,6 +24,7 @@ use App\Location;
 use App\Models\AssetProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class MerchantController extends Controller
@@ -255,8 +256,12 @@ class MerchantController extends Controller
             ], 204);
         }
         try {
-            $asset = MerchantAsset::where("id", $request->asset_id)->first();
-            $merchant = User::where("id", $request->user_id)->first();
+            $asset = MerchantAsset::select('tbl_acp_merchant_assets.*','tbl_acp_asset_providers.shop_name as asset_provider_shop_name',
+            'tbl_acp_asset_providers.email as asset_provider_email','tbl_acp_asset_providers.phone as asset_provider_phone','tbl_acp_asset_providers.location as asset_provider_location'
+             ,'tbl_acp_asset_providers.sub_county as asset_provider_sub_county','tbl_acp_asset_providers.county as asset_provider_county')->where("tbl_acp_merchant_assets.id", $request->asset_id)
+            ->join('tbl_acp_asset_providers', 'tbl_acp_asset_providers.id','tbl_acp_merchant_assets.asset_provider_id')
+            ->first();
+            $merchant = User::select('users.*', 'shops.name as shop_name')->where("users.id",$request->user_id)->join('shops', 'shops.owner_id', 'users.id')->first();
             if ($asset) {
                 if ($asset->units >= $request->units) {
                     if ($merchant) {
@@ -276,6 +281,79 @@ class MerchantController extends Controller
                             if ($order_request->save()) {
                                 $merchant->account_balance = $merchant->account_balance - ($request->units * $asset->deposit_amount);
                                 if ($merchant->save()) {
+
+
+                                $city = City::where('id', $merchant->city)->first();
+                                $region = Region::where('id', $merchant->region)->first();
+                                $location = Location::where('id',$merchant->location)->first();
+
+                                $subject = "Nyayomat Order # ".$order_request->id. " Confirmation" ;
+                                $asset_provider_email = $asset->asset_provider_email;
+
+                                $asset_provider_asset = Asset::where("id", $request->asset_id)->first();
+
+                                $asset_provider_mail_data = array(
+
+                                   "order_id" => $order_request->id,
+                                    "subject" => "Nyayomat Order # ".$order_request->id,
+                                    "asset_provider_shop_name" => $asset->asset_provider_shop_name,
+                                    "merchant_shop_name" => $merchant->shop_name,
+                                    "merchant_contact" => $merchant->mobile,
+                                    "asset_name" => $asset->asset_name,
+                                    "units" => $request->units,
+                                    "unit_price" => $asset_provider_asset->unit_cost,
+                                    "total_cost" => $request->units * $asset_provider_asset->unit_cost,
+                                    "location" => $location ? $location->name : '',
+                                    "region" => $region ?  $region->name : '', 
+                                    "city" => $city ? $city->name : '',
+                                );
+
+                                $merchant_mail_data = array(
+                                    "order_id" => $order_request->id,
+                                    "asset_provider_shop_name" => $asset->asset_provider_shop_name,
+                                    "merchant_shop_name" => $merchant->shop_name,
+                                    "asset_provider_contact" => $asset->asset_provider_phone,
+                                    "asset_name" => $asset->asset_name,
+                                    "units" => $request->units,
+                                    "unit_price" => $asset->unit_cost,
+                                    "total_cost" => $request->units * $asset->unit_cost,
+                                    "location" => $asset->asset_provider_location ? $asset->asset_provider_location : '',
+                                    "sub_county" => $asset->asset_provider_sub_county ?  $asset->asset_provider_sub_county : '', 
+                                    "county" => $asset->asset_provider_county ? $asset->asset_provider_county : '',
+
+                                );
+
+                                //Asset Provider Mails
+                            
+                                Mail::send('acp.mail.asset_provider_new_order', $asset_provider_mail_data, function($message) use ($subject , $asset_provider_email) {
+                                $message->to($asset_provider_email)->subject
+                                    ($subject);
+                                $message->from('no-reply@nyayomat.com','Nyayomat');
+                                });
+
+                                Mail::send('acp.mail.asset_provider_new_order', $asset_provider_mail_data, function($message) use ($subject) {
+                                $message->to('no-reply@nyayomat.com')->subject
+                                    ($subject);
+                                $message->from('no-reply@nyayomat.com','Nyayomat');
+                                });
+
+                                //Merchant Mails
+
+                                $merchant_email = $merchant->email;
+
+                                Mail::send('acp.mail.merchant_new_order', $merchant_mail_data, function($message) use ($subject , $merchant_email) {
+                                $message->to($merchant_email)->subject
+                                    ($subject);
+                                $message->from('no-reply@nyayomat.com','Nyayomat');
+                                });
+
+                                Mail::send('acp.mail.merchant_new_order', $merchant_mail_data, function($message) use ($subject) {
+                                $message->to('no-reply@nyayomat.com')->subject
+                                    ($subject);
+                                $message->from('no-reply@nyayomat.com','Nyayomat');
+                                });
+
+
                                     return response()->json([
                                         "status" => true,
                                         "message" => "Asset request successfully submitted",
@@ -434,11 +512,139 @@ class MerchantController extends Controller
                         $merchant_asset->save();
                         $asset->units = $asset->units - $is_exist->units;
                         $asset->save();
+
                     }
+                    $merchant = User::select('users.*', 'shops.name as shop_name')->where("users.id",$user_id)->join('shops', 'shops.owner_id', 'users.id')->first();
+                        $asset_provider_data = AssetProvider::where('id',$is_exist->asset_provider_id)->first();
+
+                        $subject = "Nyayomat Order # ".$is_exist->id . " Receipt";
+                        $merchant_email = $merchant->email;
+
+                        $merchant_mail_data = array(
+                            "order_id" => $is_exist->id,
+                            "asset_provider_shop_name" => $asset_provider_data->shop_name,
+                            "merchant_shop_name" => $merchant->shop_name,
+                            "asset_provider_contact" => $asset_provider_data->phone,
+                            "asset_name" => $merchant_asset->asset_name,
+                            "units" => $is_exist->units,
+                            "unit_price" => $is_exist->unit_cost,
+                            "total_cost" => $is_exist->units * $is_exist->unit_cost,
+                            "location" => $asset_provider_data->location ? $asset_provider_data->location : '',
+                            "sub_county" => $asset_provider_data->sub_county ?  $asset_provider_data->sub_county : '', 
+                            "county" => $asset_provider_data->county ? $asset_provider_data->county : '',
+                        );
+
+                        // Merchant Mails 
+                            
+                        Mail::send('acp.mail.merchant_confirmed_order', $merchant_mail_data, function($message) use ($subject , $merchant_email) {
+                        $message->to($merchant_email)->subject
+                            ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
+
+                        Mail::send('acp.mail.merchant_confirmed_order', $merchant_mail_data, function($message) use ($subject) {
+                            $message->to('no-reply@nyayomat.com')->subject
+                            ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
+
+                        $city = City::where('id', $merchant->city)->first();
+                        $region = Region::where('id', $merchant->region)->first();
+                        $location = Location::where('id',$merchant->location)->first();
+
+                        $asset_provider_mail_data = array(
+                            "order_id" => $is_exist->id,
+                            "asset_provider_shop_name" => $asset_provider_data->shop_name,
+                            "merchant_shop_name" => $merchant->shop_name,
+                            "merchant_contact" => $merchant->mobile,
+                            "asset_name" =>  $merchant_asset->asset_name,
+                            "units" => $is_exist->units,
+                            "unit_price" => $is_exist->unit_cost,
+                            "total_cost" => $is_exist->units * $is_exist->unit_cost,
+                            "location" => $location ? $location->name : '',
+                            "region" => $region ?  $region->name : '', 
+                            "city" => $city ? $city->name : '',
+                        );
+
+                        $asset_provider_email = $asset_provider_data->email;
+                        // Asset Provider Mails
+                        Mail::send('acp.mail.asset_provider_confirmed_order', $asset_provider_mail_data, function($message) use ($subject , $asset_provider_email) {
+                        $message->to($asset_provider_email)->subject
+                            ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
+
+                        Mail::send('acp.mail.asset_provider_confirmed_order', $asset_provider_mail_data, function($message) use ($subject) {
+                            $message->to('no-reply@nyayomat.com')->subject
+                            ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
                 } else {
                     $user = User::where("id", $user_id)->first();
                     $user->account_balance = $user->account_balance + ($is_exist->units * $is_exist->deposit_amount);
                     $user->save();
+
+                    $merchant = User::select('users.*', 'shops.name as shop_name')->where("users.id",$user_id)->join('shops', 'shops.owner_id', 'users.id')->first();
+                        $asset_provider_data = AssetProvider::where('id',$is_exist->asset_provider_id)->first();
+
+                        $subject = "Nyayomat Order # ".$is_exist->id . " Cancellation";
+                        $merchant_email = $merchant->email;
+
+                        $merchant_mail_data = array(
+                            "order_id" => $is_exist->id,
+                            "asset_provider_shop_name" => $asset_provider_data->shop_name,
+                            "merchant_shop_name" => $merchant->shop_name,
+                            "asset_provider_contact" => $asset_provider_data->phone,
+                            "asset_name" => $merchant_asset->asset_name,
+                            "units" => $is_exist->units,
+                            "unit_price" => $is_exist->unit_cost,
+                            "total_cost" => $is_exist->units * $is_exist->unit_cost,
+                            "location" => $asset_provider_data->location ? $asset_provider_data->location : '',
+                            "sub_county" => $asset_provider_data->sub_county ?  $asset_provider_data->sub_county : '', 
+                            "county" => $asset_provider_data->county ? $asset_provider_data->county : '',
+                        );
+                            
+                        Mail::send('acp.mail.merchant_cancelled_order', $merchant_mail_data, function($message) use ($subject , $merchant_email) {
+                            $message->to($merchant_email)->subject
+                                ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
+
+                        Mail::send('acp.mail.merchant_cancelled_order', $merchant_mail_data, function($message) use ($subject) {
+                            $message->to('no-reply@nyayomat.com')->subject
+                                ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
+
+                        $city = City::where('id', $merchant->city)->first();
+                        $region = Region::where('id', $merchant->region)->first();
+                        $location = Location::where('id',$merchant->location)->first();
+
+                        $asset_provider_mail = array(
+                            "order_id" => $is_exist->id,
+                            "asset_provider_shop_name" => $asset_provider_data->shop_name,
+                            "merchant_shop_name" => $merchant->shop_name,
+                            "merchant_contact" => $merchant->mobile,
+                            "asset_name" =>  $merchant_asset->asset_name,
+                            "units" => $is_exist->units,
+                            "unit_price" => $is_exist->unit_cost,
+                            "total_cost" => $is_exist->units * $is_exist->unit_cost,
+                            "location" => $location ? $location->name : '',
+                            "region" => $region ?  $region->name : '', 
+                            "city" => $city ? $city->name : '',
+                        );
+                        $asset_provider_email = $asset_provider_data->email;
+                        Mail::send('acp.mail.asset_provider_cancelled_order', $asset_provider_mail, function($message) use ($subject , $asset_provider_email) {
+                            $message->to($asset_provider_email)->subject
+                                ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
+
+                        Mail::send('acp.mail.asset_provider_cancelled_order', $asset_provider_mail, function($message) use ($subject) {
+                            $message->to('no-reply@nyayomat.com')->subject
+                                ($subject);
+                            $message->from('no-reply@nyayomat.com','Nyayomat');
+                        });
                 }
             }
             $is_exist->status = $status;

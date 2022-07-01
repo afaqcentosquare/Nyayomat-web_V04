@@ -25,7 +25,7 @@ class AssetTest extends TestCase
      */
     public function testATypeAsset()
     {
-       
+       //in this test we are testing emails as well
         $faker = Faker::create();
         $image = $faker->numerify('##########').'.png';
         $file = UploadedFile::fake()->create($image);

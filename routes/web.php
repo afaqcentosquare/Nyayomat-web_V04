@@ -51,6 +51,7 @@ Route::post('/ussd/{key}', 'USSD\USSDController@index');
  * 
  */
 
+ Route::get('/test-mail', 'ACP\Mail\MailController@testMail')->name('test.mail');
 
  /**
  * PRODUCTS ROUTES

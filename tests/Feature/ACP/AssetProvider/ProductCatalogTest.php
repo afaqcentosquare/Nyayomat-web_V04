@@ -34,6 +34,7 @@ class ProductCatalogTest extends TestCase
      */
     public function testUpdateStatusSingle()
     {
+        //in this test we are testing emails as well
         $asset_provider = AssetProvider::first();
         $asset = Asset::where('asset_provider_id',$asset_provider->id)->first();
         $this->withSession(['asset_provider_id' => $asset_provider->id]);

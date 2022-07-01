@@ -269,11 +269,8 @@ vendor/bin/phpunit tests/Feature/ACP/AssetProvider/ProductCatalogTest.php
 vendor/bin/phpunit tests/Feature/ACP/AssetProvider/TransactionTest.php
 
 
-
-
-
-
-
-
-
-
+Notification Module Added: (07-01-22)
+1. When asset create by admin we send email notification to asset provider.
+2. When merchant request the asset. We send email notification to asset provider, merchant & admin.
+3. When merchant cancel asset request. We send email notification to asset provider, merchant & admin.
+4. When merchant confirm asset request. We send email notification to asset provider, merchant & admin.

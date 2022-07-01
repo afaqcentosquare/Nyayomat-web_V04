@@ -38,12 +38,12 @@
             </span>
         </a>
 
-        <a href="#" class="nav_link">
+        {{-- <a href="#" class="nav_link">
             <i class='fas fa-tachometer-alt nav_icon'></i>
             <span class="nav_name">
                 Notifications
             </span>
-        </a>
+        </a> --}}
 
         <a href="{{route("assetprovider.logout")}}" class="nav_link"> 
             <i class='bx bx-log-out nav_icon'></i> 

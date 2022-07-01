@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ACP\AssetProvider;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Asset;
+use App\Models\MerchantAsset;
 use App\Models\MerchantAssetOrder;
 use Carbon\Carbon;
 use Exception;
@@ -129,6 +130,10 @@ class ProductCatalogController extends Controller
             $asset = Asset::where("id", $id)->first();
             $asset->units = $request->units + $asset->units;
             if($asset->save()){
+
+                $merchant_asset = MerchantAsset::where("id", $id)->first();
+                $merchant_asset->units = $request->units + $merchant_asset->units;
+                $merchant_asset->save();
                 return redirect()->route('assetprovider.dashboard')->withSuccess("Asset updated Successfully")->withInput();
             }else{
                 return redirect()->route('assetprovider.dashboard')->withError("Something went wrong :(")->withInput();

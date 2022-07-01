@@ -23,6 +23,7 @@ class AssetTest extends TestCase
      */
     public function testAssetRequest()
     {
+        //in this test we are testing emails as well
         $merchant = User::select("users.*", "shops.name as shop_name")->join("shops", "shops.owner_id", "users.id")->first();
         $asset = Asset::first();
         $data = [
@@ -45,6 +46,7 @@ class AssetTest extends TestCase
      */
     public function testOrderAssetStatus()
     {
+        //in this test we are testing emails as well
         $order = MerchantAssetOrder::where('status', 'pending')->first();
 
         if ($order) {

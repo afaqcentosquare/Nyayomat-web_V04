@@ -46,6 +46,8 @@ class DepositController extends Controller
 
         $acc_token = $this->returnAccessToken($consumerKey, $consumerSecret);
 
+        $call_back_url = url('api/mpesaipn/'.$request->merchant_id);
+
         //initiate safaricom payment
         $url = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
         $transaction_type = 'CustomerBuyGoodsOnline';
@@ -56,7 +58,7 @@ class DepositController extends Controller
         $pass_key = '2a214d33c22817761164f6ba2a7c51cbbd9c0982915c34e1596fa09d7859ada4';
         $appKeySecret = $shortcode . $pass_key . $timestamp;
         $password = base64_encode($appKeySecret);
-        $CallBackURL= "https://nyayomat.com/api/mpesaipn/".$request->merchant_id;
+        $CallBackURL= $call_back_url;
 
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $url);
