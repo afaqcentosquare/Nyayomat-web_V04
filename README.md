@@ -1,18 +1,22 @@
-# Nyayomat-web_V04
+# Nyayomat-Web_Production-Environment
 
 **Project Overview**
 
-Nyayomat ACP (Nyayomat Boost) is built alongside the e-commerce platform whereby merchants are connected to partners (Asset Providers) through the ACP. 
+Nyayomat ACP (Nyayomat Boost) is built alongside an e-commerce platform whereby merchants are connected to partners (Asset Providers) through the ACP. The platform acts as an intermediary between micro, small and medium-sized merchants and asset providers to facilitate asset/working capital financing between the counterparties.
 
 The ACP contains users, product catalog, transactions, invoices and payments. The file directory is as follows: 
 
-├── Controllers
+- Controllers
 
-├── Middleware
+- Middleware
 
-├── resources
+- Resources
 
-├── routes
+- Routes
+
+- ACP Functionalities
+
+- Unit Test
 
 #### **Controllers**
 
@@ -41,6 +45,7 @@ Contains the ACP Merchant API, ACP Dashboard & Ecommerce related files.
 2.0.1	Http
 
 2.0.1.1	Middleware
+
 
 #### **Resources** 
 
@@ -72,6 +77,7 @@ Contains the ACP Merchant API, ACP Dashboard & Ecommerce related files.
 
 3.0.1.10	plugins
 
+
 #### **Routes** 
 
 Contains the ACP Merchant API, ACP Dashboard & Ecommerce related changed files.
@@ -84,181 +90,392 @@ Contains the ACP Merchant API, ACP Dashboard & Ecommerce related changed files.
 
 4.0.3	storefront
 
-ACP nyayomat explanation:
+
+#### **ACP Functionalities** 
+
 We have three users in ACP nyayomat:
+
 1. Super admin
+
 2. Asset Provider
+
 3. Merchant
 
-Super admin have functionalities
+Super admin has the following functionalities:
+
 1. Dashboard
 
 Method: GET
+
 URI: admin/welcome
+
 Name: superadmin.dashboard
+
 Action: App\Http\Controllers\ACP\SuperAdmin\DashboardController@index
+
 
 2. Asset Provider
 
 Method: GET
+
 URI: admin/assetprovider
+
 Name: superadmin.assetprovider
+
 Action: App\Http\Controllers\ACP\SuperAdmin\AssetProviderController@index
 
-Asset provider have following actions
+Superadmin administers the following actions: 
 
-1- Add asset
+
+2.1	Suspend, Approve, Decline & Shortlist Asset Provider
 
 Method: GET
+
+URI: admin/update/assetprovider/status/{id}/{status}
+
+Name: superadmin.update.assetprovider.status
+
+Action: App\Http\Controllers\ACP\SuperAdmin\AssetProviderController@updateStatus
+
+
+2.2	Add asset on behalf of Asset Provider (After adding Categories section 3 below)
+
+Method: GET
+
 URI: admin/asset/store
+
 Name: superadmin.asset.store
+
 Action: App\Http\Controllers\ACP\SuperAdmin\AssetController@store
 
-2- Suspend, Approve & Shortlist
-
-Method: GET
-URI: admin/update/assetprovider/status/{id}/{status}
-Name: superadmin.update.assetprovider.status
-Action: App\Http\Controllers\ACP\SuperAdmin\AssetProviderController@updateStatus
 
 3. Categories
 
 Method: GET
+
 URI: admin/categories
+
 Name: superadmin.categories
+
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@index
 
-Asset categories have following actions
+Asset categories have following actions:
 
-1. New Group
+
+3.1 New Group
 
 Method: POST
+
 URI: admin/group/store
+
 Name: superadmin.group.store
+
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@storeGroup
 
-1. Add SubGroup
+
+3.2 Add SubGroup
 
 Method: GET
+
 URI: admin/subgroup/store
+
 Name: superadmin.subgroup.store
+
 Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@storeSubGroup
+
+
+3.3 New Category 
+
+Method: POST
+
+URI: admin/categories/store
+
+Name: superadmin.categories.store
+
+Action: App\Http\Controllers\ACP\SuperAdmin\CategoryController@store
+
 
 4. Assets
 
 Method: GET
+
 URI: admin/assets
+
 Name: superadmin.assets
+
 Action: App\Http\Controllers\ACP\SuperAdmin\AssetController@index
 
-5. Product Catelog
+
+5. Product Catalog
 
 Method: GET
+
 URI: admin/productcatalog
+
 Name: superadmin.productcatalog
+
 Action: App\Http\Controllers\ACP\SuperAdmin\ProductCatalogController@index
+
 
 6. Payments
 
 Method: GET
+
 URI: admin/payments
+
 Name: superadmin.payments
+
 Action: App\Http\Controllers\ACP\SuperAdmin\PaymentController@index
+
 
 7. Invoices
 
 Method: GET
+
 URI: admin/invoices
+
 Name: superadmin.invoices
+
 Action: App\Http\Controllers\ACP\SuperAdmin\InvoiceController@index
+
 
 8. Performance
 
 Method: GET
+
 URI: admin/performance
+
 Name: superadmin.performance
+
 Action: App\Http\Controllers\ACP\SuperAdmin\PerformanceController@index
+
 
 9. Merchant Profile
 
 Method: GET
+
 URI: merchant/dashboard
+
 Name: merchant.dashboard
+
 Action: App\Http\Controllers\ACP\Merchant\DashboardController@index
 
-10. Merchant Catelog
+
+10. Merchant Catalog - Browse
 
 Method: GET
+
 URI: merchant/catalog
+
 Name: merchant.catalog
+
 Action: App\Http\Controllers\ACP\Merchant\CatalogController@index
 
-Merchant Catelog have a following action
 
-1- Request
+Merchant Catalog has the following actions:
+
+10.1 Requested
 
 Method: POST
+
 URI: merchant/asset/request
+
 Name: merchant.asset.request
+
 Action: App\Http\Controllers\ACP\Merchant\CatalogController@store
 
-11. Merchant Invoices
+
+10.2 Received
 
 Method: GET
+
+URI: merchant/catalog
+
+Name: merchant.catalog
+
+Action: App\Http\Controllers\ACP\Merchant\CatalogController@index
+
+
+11. Merchant Invoices - Unpaid
+
+Method: GET
+
 URI: merchant/invoices
+
 Name: merchant.invoices
+
 Action: App\Http\Controllers\ACP\Merchant\InvoiceController@index
 
 
+12. Merchant Invoices - Paid
 
-We create Unit Testing to Test whole ACP site:
-All test we can find under root directory then go to test folder below I explain how you run test cases one by onw or all at once through command.
+Method: GET
 
-First you need to go to server.
-![Screenshot (27)](https://user-images.githubusercontent.com/95353455/172368978-152bf2ae-ac65-4c36-9d69-d77f4599c330.png)
-Then you need to type:
-cd public_html and press enter
+URI: merchant/invoices
 
-![Screenshot (28)](https://user-images.githubusercontent.com/95353455/172369320-59c10f00-b5bd-48a8-a1e0-81e55d6ffd79.png)
-AFter run the command your screen look like below image:
+Name: merchant.invoices
 
-![Screenshot (29)](https://user-images.githubusercontent.com/95353455/172369466-f4e9b192-4a09-4f3f-b721-561d4f3bbe26.png)
+Action: App\Http\Controllers\ACP\Merchant\InvoiceController@index
 
-If you want to run all test at once:
-Run below command:
 
-vendor/bin/phpunit
+Asset provider has the following functionalities: 
 
-If you want to run test one by one follow below instructions:
+13. Asset Provider Profile
 
-Test Have three Folders:
+Method: GET
+
+URI: assetprovider/dashboard
+
+Name: assetprovider.dashboard
+
+Action: App\Http\Controllers\ACP\AssetProvider\DashboardController@index
+
+
+14. Approve an asset
+
+Method: GET
+
+URI: assetprovider/productcatalog/update/status/{id}/{is_single}
+
+Name: assetprovider.productcatalog.update.status
+
+Action: App\Http\Controllers\ACP\AssetProvider\ProductCatalogController@updateStatus
+
+
+15. Asset Provider Catalog - Confirmed
+
+Method: GET
+
+URI: assetprovider/productcatalog
+
+Name: assetprovider.productcatalog
+
+Action: App\Http\Controllers\ACP\AssetProvider\ProductCatalogController@index
+
+
+Asset Provider Catalog have the following action
+
+15.1 Delivered
+
+Method: GET
+
+URI: assetprovider/productcatalog
+
+Name: assetprovider.productcatalog
+
+Action: App\Http\Controllers\ACP\AssetProvider\ProductCatalogController@index
+
+
+16. Asset Provider Transactions
+
+Method: GET
+
+URI: assetprovider/transactions
+
+Name: assetprovider.transactions
+
+Action: App\Http\Controllers\ACP\AssetProvider\TransactionController@index
+
+
+#### **Unit Test** 
+
+Pre-requisites:
+
+To perform unit tests, 
+
+Download ZIP the code repo - Nyayomat-Web_Production-Environment
+
+Install xampp on your pc with php 7.4 version.
+
+If you have installed xampp on your pc, then go to your xampp/htdocs directory.
+
+Under this directory you need to unzip the code file you had downloaded earlier. 
+
+Create two db’s.
+
+Import the db provided into your phpmyadmin on your localhost.
+
+
+Once import is successfully done, go to your project directory and open .env file and change
+
+DB_DATABASE= your_db_name
+
+DB_USERNAME=
+
+DB_PASSWORD= 
+
+TESTING_DB_DATABASE=your_db_name
+
+TESTING_DB_USERNAME=root
+
+TESTING_DB_PASSWORD=
+
+The default password is empty on localhost.
+
+
+Proceed to cmd.
+
+Go to project directory and thereafter;
+
+
+
+Web Test Cases
+
+To run all test at once:
+
+Run the command below:
+
+•	vendor/bin/phpunit
+
+
+For individual tests, follow the instructions below:
+
+The test folder has three sub-folders: 
 
 1.SuperAdmin
+
 2.Merchant
+
 3.Asset Provider
 
-SuperAdmin Tests:
-run below commands one by one
 
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/DashboardTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AnnouncementTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AssetProviderTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AssetsTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/CategoryTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/FaqTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/GroupTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/InvoicesTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/PaymentsTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/PerformanceTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/ProductCatalogTest.php
-vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/SubGroupTest.php
+
+SuperAdmin Tests:
+
+Run below commands one by one:
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/DashboardTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AssetProviderTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/AssetsTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/CategoryTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/GroupTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/InvoicesTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/PaymentsTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/PerformanceTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/ProductCatalogTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/SuperAdmin/SubGroupTest.php
+
+
 
 Merchant Test:
-run below commands one by one
 
-vendor/bin/phpunit tests/Feature/ACP/Merchant/DashboardTest.php
-vendor/bin/phpunit tests/Feature/ACP/Merchant/CatalogTest.php
-vendor/bin/phpunit tests/Feature/ACP/Merchant/InvoiceTest.php
+Run below commands one by one:
+
+•	vendor/bin/phpunit tests/Feature/ACP/Merchant/DashboardTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/Merchant/CatalogTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/Merchant/InvoiceTest.php
+
 
 
 Asset Provider Test:
@@ -268,9 +485,30 @@ vendor/bin/phpunit tests/Feature/ACP/AssetProvider/DashboardTest.php
 vendor/bin/phpunit tests/Feature/ACP/AssetProvider/ProductCatalogTest.php
 vendor/bin/phpunit tests/Feature/ACP/AssetProvider/TransactionTest.php
 
+Run below commands one by one:
+
+•	vendor/bin/phpunit tests/Feature/ACP/AssetProvider/DashboardTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/AssetProvider/ProductCatalogTest.php
+
+•	vendor/bin/phpunit tests/Feature/ACP/AssetProvider/TransactionTest.php
+
+
+
+Common Test:
+
+•	vendor/bin/phpunit tests/Feature/ACP/Common/AssetTest.php
 
 Notification Module Added: (07-01-22)
 1. When asset create by admin we send email notification to asset provider.
 2. When merchant request the asset. We send email notification to asset provider, merchant & admin.
 3. When merchant cancel asset request. We send email notification to asset provider, merchant & admin.
 4. When merchant confirm asset request. We send email notification to asset provider, merchant & admin.
+
+
+
+
+
+
+
+
