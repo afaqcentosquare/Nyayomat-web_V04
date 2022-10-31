@@ -12,6 +12,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AssetProvider;
+use App\Helpers\Messaging;
 
 class AssetController extends Controller
 {
@@ -108,6 +109,10 @@ class AssetController extends Controller
                     $message->to($asset_provider_email)->subject($subject);
                     $message->from('no-reply@nyayomat.com', 'Nyayomat');
                 });
+
+                // Asset Provider SMS
+                Messaging::sendMessage($asset_provider->phone, "Dear " . $asset_provider->shop_name . ", Thank you for listing your asset with us. Kindly check your email for approval of the asset specifications. Nyayomat: With you, Every step");
+
 
 
                 return redirect()->route('superadmin.assetprovider')->withSuccess("Asset added Successfully")->withInput();

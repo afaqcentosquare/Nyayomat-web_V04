@@ -337,6 +337,10 @@ class MerchantController extends Controller
                                 $message->from('no-reply@nyayomat.com','Nyayomat');
                                 });
 
+                                // Asset Provder SMS
+                                Messaging::sendMessage($asset->asset_provider_phone, 
+                                "New Order Request!\nDear ".$asset->asset_provider_shop_name.",Kindly check your email for Order ID: ".$order_request->id." details.\nNyayomat: With you, Every step");
+
                                 //Merchant Mails
 
                                 $merchant_email = $merchant->email;
@@ -645,7 +649,10 @@ class MerchantController extends Controller
                                 ($subject);
                             $message->from('no-reply@nyayomat.com','Nyayomat');
                         });
-                }
+
+                        Messaging::sendMessage($asset_provider_data->phone, 
+                        "Order Cancellation!!\nDear ".$asset_provider_data->shop_name.", Kindly check your email for Order ID: ".$is_exist->id."cancellation.\nNyayomat: With you, Every step");
+                    }
             }
             $is_exist->status = $status;
             if ($is_exist->save()) {
