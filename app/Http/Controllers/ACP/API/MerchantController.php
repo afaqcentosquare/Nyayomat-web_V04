@@ -651,7 +651,7 @@ class MerchantController extends Controller
                         });
 
                         Messaging::sendMessage($asset_provider_data->phone, 
-                        "Order Cancellation!!\nDear ".$asset_provider_data->shop_name.", Kindly check your email for Order ID: ".$is_exist->id."cancellation.\nNyayomat: With you, Every step");
+                        "Order Cancellation!!\nDear ".$asset_provider_data->shop_name.", Kindly check your email for Order ID: ".$is_exist->id." cancellation.\nNyayomat: With you, Every step");
                     }
             }
             $is_exist->status = $status;
